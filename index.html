@@ -1,0 +1,1894 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>BClean Almacén</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3d558c">
+
+<style>
+
+:root{
+  --azul:#3d558c;
+  --azul-oscuro:#2c406d;
+  --azul-claro:#eef2f9;
+  --verde:#16834b;
+  --rojo:#c62828;
+  --amarillo:#e69b00;
+  --gris:#f4f6f8;
+  --gris2:#dfe4ea;
+  --texto:#1d2733;
+  --blanco:#ffffff;
+}
+
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  font-family:Arial,Helvetica,sans-serif;
+  background:var(--gris);
+  color:var(--texto);
+}
+
+/* =========================
+   ENCABEZADO
+========================= */
+
+.header{
+  height:74px;
+  background:var(--azul);
+  color:white;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 28px;
+  box-shadow:0 2px 8px rgba(0,0,0,.15);
+}
+
+.logo{
+  font-size:26px;
+  font-weight:bold;
+}
+
+.logo span{
+  font-size:14px;
+  opacity:.8;
+  margin-left:10px;
+}
+
+.header-status{
+  display:flex;
+  align-items:center;
+  gap:15px;
+}
+
+.connection{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  font-size:14px;
+}
+
+.connection-dot{
+  width:10px;
+  height:10px;
+  background:#35d17a;
+  border-radius:50%;
+}
+
+/* =========================
+   CONTENEDOR
+========================= */
+
+.app{
+  display:grid;
+  grid-template-columns:250px 1fr;
+  min-height:calc(100vh - 74px);
+}
+
+/* =========================
+   MENU
+========================= */
+
+.sidebar{
+  background:white;
+  border-right:1px solid var(--gris2);
+  padding:20px 14px;
+}
+
+.menu-title{
+  font-size:12px;
+  color:#8a929c;
+  font-weight:bold;
+  margin:5px 12px 10px;
+  text-transform:uppercase;
+}
+
+.menu-btn{
+  width:100%;
+  border:0;
+  background:white;
+  padding:16px 15px;
+  margin-bottom:7px;
+  border-radius:10px;
+  text-align:left;
+  font-size:16px;
+  font-weight:bold;
+  cursor:pointer;
+  color:#35404d;
+}
+
+.menu-btn:hover{
+  background:var(--azul-claro);
+}
+
+.menu-btn.active{
+  background:var(--azul);
+  color:white;
+}
+
+/* =========================
+   CONTENIDO
+========================= */
+
+.content{
+  padding:24px;
+  overflow:auto;
+}
+
+.view{
+  display:none;
+}
+
+.view.active{
+  display:block;
+}
+
+.page-title{
+  font-size:26px;
+  margin:0 0 5px;
+}
+
+.page-subtitle{
+  color:#737c87;
+  margin:0 0 22px;
+}
+
+/* =========================
+   MODO MOVIMIENTO
+========================= */
+
+.mode-selector{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:14px;
+  margin-bottom:20px;
+}
+
+.mode-btn{
+  border:3px solid transparent;
+  border-radius:12px;
+  padding:18px;
+  background:white;
+  font-size:20px;
+  font-weight:bold;
+  cursor:pointer;
+  box-shadow:0 2px 7px rgba(0,0,0,.06);
+}
+
+.mode-btn.entrada{
+  color:var(--verde);
+}
+
+.mode-btn.salida{
+  color:var(--rojo);
+}
+
+.mode-btn.ajuste{
+  color:var(--amarillo);
+}
+
+.mode-btn.selected{
+  border-color:currentColor;
+}
+
+/* =========================
+   SCANNER
+========================= */
+
+.scanner-panel{
+  background:white;
+  border-radius:15px;
+  padding:25px;
+  box-shadow:0 2px 8px rgba(0,0,0,.07);
+  margin-bottom:20px;
+}
+
+.scanner-title{
+  font-size:18px;
+  font-weight:bold;
+  margin-bottom:12px;
+}
+
+.scanner-input{
+  width:100%;
+  height:78px;
+  border:3px solid var(--azul);
+  border-radius:12px;
+  padding:10px 18px;
+  font-size:32px;
+  text-align:center;
+  outline:none;
+}
+
+.scanner-input:focus{
+  box-shadow:0 0 0 5px rgba(61,85,140,.12);
+}
+
+.scanner-help{
+  text-align:center;
+  color:#7d858e;
+  margin-top:10px;
+}
+
+/* =========================
+   CANTIDAD
+========================= */
+
+.quantity-row{
+  display:grid;
+  grid-template-columns:160px 1fr;
+  gap:15px;
+  margin-top:18px;
+  align-items:center;
+}
+
+.quantity-row label{
+  font-weight:bold;
+}
+
+.quantity{
+  height:55px;
+  font-size:25px;
+  border:1px solid var(--gris2);
+  border-radius:9px;
+  padding:8px 14px;
+}
+
+/* =========================
+   PRODUCTO
+========================= */
+
+.product-card{
+  display:grid;
+  grid-template-columns:1fr 180px;
+  gap:20px;
+  background:white;
+  border-radius:15px;
+  padding:22px;
+  box-shadow:0 2px 8px rgba(0,0,0,.07);
+}
+
+.product-name{
+  font-size:25px;
+  font-weight:bold;
+  margin-bottom:15px;
+}
+
+.product-data{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+}
+
+.data-box{
+  background:var(--gris);
+  border-radius:9px;
+  padding:13px;
+}
+
+.data-label{
+  font-size:12px;
+  color:#7d858e;
+  margin-bottom:5px;
+  text-transform:uppercase;
+}
+
+.data-value{
+  font-size:20px;
+  font-weight:bold;
+}
+
+.stock-ok{
+  color:var(--verde);
+}
+
+.stock-low{
+  color:var(--amarillo);
+}
+
+.stock-empty{
+  color:var(--rojo);
+}
+
+.product-photo{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.product-photo img{
+  max-width:160px;
+  max-height:160px;
+  object-fit:contain;
+  border-radius:10px;
+}
+
+/* =========================
+   ESTADO
+========================= */
+
+.message{
+  margin-top:18px;
+  padding:17px;
+  border-radius:10px;
+  font-size:17px;
+  font-weight:bold;
+  display:none;
+}
+
+.message.success{
+  display:block;
+  background:#e6f7ed;
+  color:#12673d;
+}
+
+.message.error{
+  display:block;
+  background:#fdeaea;
+  color:#a31e1e;
+}
+
+.message.warning{
+  display:block;
+  background:#fff5dc;
+  color:#8a5c00;
+}
+
+/* =========================
+   ULTIMO MOVIMIENTO
+========================= */
+
+.last-movement{
+  background:white;
+  border-radius:15px;
+  padding:20px;
+  margin-top:20px;
+  box-shadow:0 2px 8px rgba(0,0,0,.07);
+}
+
+.last-title{
+  font-weight:bold;
+  margin-bottom:12px;
+}
+
+.last-info{
+  font-size:18px;
+}
+
+/* =========================
+   CONSULTA
+========================= */
+
+.search-panel{
+  background:white;
+  padding:25px;
+  border-radius:15px;
+  box-shadow:0 2px 8px rgba(0,0,0,.07);
+}
+
+.search-input{
+  width:100%;
+  height:60px;
+  font-size:22px;
+  border:2px solid var(--gris2);
+  border-radius:10px;
+  padding:10px 15px;
+}
+
+.search-results{
+  margin-top:20px;
+}
+
+.result-item{
+  background:white;
+  border:1px solid var(--gris2);
+  border-radius:10px;
+  padding:15px;
+  margin-bottom:10px;
+  cursor:pointer;
+}
+
+.result-item:hover{
+  background:var(--azul-claro);
+}
+
+.result-name{
+  font-size:18px;
+  font-weight:bold;
+}
+
+.result-meta{
+  color:#777;
+  margin-top:5px;
+}
+
+/* =========================
+   INVENTARIO
+========================= */
+
+.inventory-toolbar{
+  display:flex;
+  gap:10px;
+  margin-bottom:20px;
+}
+
+.inventory-table-wrapper{
+  background:white;
+  border-radius:15px;
+  overflow:auto;
+  box-shadow:0 2px 8px rgba(0,0,0,.07);
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+th{
+  background:var(--azul);
+  color:white;
+  padding:14px;
+  text-align:left;
+  position:sticky;
+  top:0;
+}
+
+td{
+  padding:13px 14px;
+  border-bottom:1px solid #edf0f3;
+}
+
+tr:hover{
+  background:#f7f9fc;
+}
+
+/* =========================
+   CONFIG
+========================= */
+
+.config-card{
+  background:white;
+  border-radius:15px;
+  padding:25px;
+  margin-bottom:20px;
+  box-shadow:0 2px 8px rgba(0,0,0,.07);
+}
+
+.config-card h3{
+  margin-top:0;
+}
+
+.config-input{
+  width:100%;
+  padding:13px;
+  border:1px solid var(--gris2);
+  border-radius:8px;
+  font-size:16px;
+  margin-top:8px;
+}
+
+.btn{
+  border:0;
+  border-radius:8px;
+  padding:13px 20px;
+  font-weight:bold;
+  cursor:pointer;
+  font-size:15px;
+}
+
+.btn-primary{
+  background:var(--azul);
+  color:white;
+}
+
+.btn-secondary{
+  background:#e9edf3;
+  color:#374151;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media(max-width:900px){
+
+  .app{
+    grid-template-columns:1fr;
+  }
+
+  .sidebar{
+    display:flex;
+    overflow:auto;
+    gap:8px;
+    padding:10px;
+  }
+
+  .menu-title{
+    display:none;
+  }
+
+  .menu-btn{
+    min-width:140px;
+    margin:0;
+  }
+
+  .product-data{
+    grid-template-columns:repeat(2,1fr);
+  }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<header class="header">
+
+  <div class="logo">
+    BClean Almacén
+    <span>Terminal de inventario</span>
+  </div>
+
+  <div class="header-status">
+    <div class="connection">
+      <span class="connection-dot"></span>
+      API conectada
+    </div>
+  </div>
+
+</header>
+
+<div class="app">
+
+<!-- =========================
+     MENU
+========================= -->
+
+<aside class="sidebar">
+
+  <div class="menu-title">Operaciones</div>
+
+  <button class="menu-btn active" onclick="mostrarVista('movimientos',this)">
+    📦 Movimientos
+  </button>
+
+  <button class="menu-btn" onclick="seleccionarConsulta(this)">
+    🔎 Consultar
+  </button>
+
+  <button class="menu-btn" onclick="cargarInventario(this)">
+    📊 Inventario
+  </button>
+
+  <div class="menu-title">Sistema</div>
+
+  <button class="menu-btn" onclick="mostrarVista('config',this)">
+    ⚙️ Configuración
+  </button>
+
+</aside>
+
+<!-- =========================
+     CONTENIDO
+========================= -->
+
+<main class="content">
+
+<!-- =========================
+     MOVIMIENTOS
+========================= -->
+
+<section id="movimientos" class="view active">
+
+  <h1 class="page-title">Movimientos de almacén</h1>
+
+  <p class="page-subtitle">
+    Escanea productos para registrar entradas, salidas o ajustes.
+  </p>
+
+  <div class="mode-selector">
+
+    <button
+      class="mode-btn entrada selected"
+      id="btnEntrada"
+      onclick="cambiarModo('ENTRADA')">
+      ⬆ ENTRADA
+    </button>
+
+    <button
+      class="mode-btn salida"
+      id="btnSalida"
+      onclick="cambiarModo('SALIDA')">
+      ⬇ SALIDA
+    </button>
+
+    <button
+      class="mode-btn ajuste"
+      id="btnAjuste"
+      onclick="cambiarModo('AJUSTE')">
+      ⚙ AJUSTE
+    </button>
+
+  </div>
+
+  <div class="scanner-panel">
+
+    <div class="scanner-title">
+      Escanea el código de barras
+    </div>
+
+    <input
+      id="scannerInput"
+      class="scanner-input"
+      type="text"
+      autocomplete="off"
+      placeholder="Esperando escaneo..."
+      autofocus
+    >
+
+    <div class="scanner-help">
+      El lector puede utilizarse como teclado. Después de cada registro
+      el cursor vuelve automáticamente aquí.
+    </div>
+
+    <div class="quantity-row">
+
+      <label>Cantidad</label>
+
+      <input
+        id="quantityInput"
+        class="quantity"
+        type="number"
+        value="1"
+        min="0.01"
+        step="0.01"
+      >
+
+    </div>
+
+    <div id="movementMessage" class="message"></div>
+
+  </div>
+
+  <div id="productCard" class="product-card">
+
+    <div>
+
+      <div class="product-name">
+        Esperando producto...
+      </div>
+
+      <div class="product-data">
+
+        <div class="data-box">
+          <div class="data-label">Clave</div>
+          <div class="data-value" id="productClave">—</div>
+        </div>
+
+        <div class="data-box">
+          <div class="data-label">Código</div>
+          <div class="data-value" id="productBarcode">—</div>
+        </div>
+
+        <div class="data-box">
+          <div class="data-label">Existencia</div>
+          <div class="data-value" id="productStock">—</div>
+        </div>
+
+        <div class="data-box">
+          <div class="data-label">Estado</div>
+          <div class="data-value" id="productState">—</div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="product-photo">
+      <img id="productPhoto" style="display:none;">
+    </div>
+
+  </div>
+
+  <div class="last-movement">
+
+    <div class="last-title">
+      Último movimiento
+    </div>
+
+    <div id="lastMovement" class="last-info">
+      Todavía no hay movimientos en esta sesión.
+    </div>
+
+  </div>
+
+</section>
+
+<!-- =========================
+     CONSULTA
+========================= -->
+
+<section id="consulta" class="view">
+
+  <h1 class="page-title">Consultar producto</h1>
+
+  <p class="page-subtitle">
+    Busca por clave, descripción o código de barras.
+  </p>
+
+  <div class="search-panel">
+
+    <input
+      id="searchInput"
+      class="search-input"
+      placeholder="Escribe clave, producto o código..."
+      autocomplete="off"
+    >
+
+    <div id="searchResults" class="search-results"></div>
+
+  </div>
+
+</section>
+
+<!-- =========================
+     INVENTARIO
+========================= -->
+
+<section id="inventario" class="view">
+
+  <h1 class="page-title">Inventario</h1>
+
+  <p class="page-subtitle">
+    Existencias actuales de la Base Madre.
+  </p>
+
+  <div class="inventory-toolbar">
+
+    <input
+      id="inventorySearch"
+      class="search-input"
+      style="height:50px;"
+      placeholder="Filtrar inventario..."
+    >
+
+    <button
+      class="btn btn-primary"
+      onclick="cargarInventario()">
+      ↻ Actualizar
+    </button>
+
+  </div>
+
+  <div class="inventory-table-wrapper">
+
+    <table>
+
+      <thead>
+
+        <tr>
+          <th>Clave</th>
+          <th>Producto</th>
+          <th>Código</th>
+          <th>Existencia</th>
+          <th>Mínimo</th>
+          <th>Estado</th>
+        </tr>
+
+      </thead>
+
+      <tbody id="inventoryBody">
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+</section>
+
+<!-- =========================
+     CONFIGURACION
+========================= -->
+
+<section id="config" class="view">
+
+  <h1 class="page-title">Configuración</h1>
+
+  <p class="page-subtitle">
+    Configuración de la terminal del almacén.
+  </p>
+
+  <div class="config-card">
+
+    <h3>Usuario de almacén</h3>
+
+    <p>
+      Este nombre se enviará al registro de movimientos.
+    </p>
+
+    <input
+      id="userInput"
+      class="config-input"
+      placeholder="Ejemplo: ALMACEN"
+    >
+
+    <br><br>
+
+    <button
+      class="btn btn-primary"
+      onclick="guardarConfiguracion()">
+      Guardar configuración
+    </button>
+
+  </div>
+
+  <div class="config-card">
+
+    <h3>Modo de escaneo</h3>
+
+    <p>
+      En modo rápido, después de registrar un producto,
+      el lector queda listo inmediatamente para el siguiente.
+    </p>
+
+    <label>
+      <input
+        type="checkbox"
+        id="rapidMode"
+        checked
+      >
+      Activar modo rápido
+    </label>
+
+  </div>
+
+</section>
+
+</main>
+
+</div>
+
+<script>
+
+/* =====================================================
+   CONFIGURACIÓN
+===================================================== */
+
+const API =
+"https://script.google.com/macros/s/AKfycbwQMousq8gdmOt_9ZzKp28NoG5ZLzuoskzGDDif5pBIkIbb6AvtryBPcOaD4x2xIUoZoQ/exec";
+
+let modoActual = "ENTRADA";
+let productosInventario = [];
+let procesando = false;
+
+
+/* =====================================================
+   INICIO
+===================================================== */
+
+document.addEventListener("DOMContentLoaded",function(){
+
+  cargarConfiguracion();
+
+  enfocarScanner();
+
+  document
+    .getElementById("scannerInput")
+    .addEventListener("keydown",manejarScanner);
+
+  document
+    .getElementById("searchInput")
+    .addEventListener("input",buscarProductos);
+
+  document
+    .getElementById("inventorySearch")
+    .addEventListener("input",filtrarInventario);
+
+  document.addEventListener("click",function(e){
+
+    const elemento = e.target;
+
+    if(
+      elemento.tagName !== "INPUT" &&
+      elemento.tagName !== "BUTTON" &&
+      elemento.tagName !== "SELECT"
+    ){
+      if(
+        document
+          .getElementById("movimientos")
+          .classList.contains("active")
+      ){
+        enfocarScanner();
+      }
+    }
+
+  });
+
+});
+
+
+/* =====================================================
+   NAVEGACIÓN
+===================================================== */
+
+function mostrarVista(nombre,boton){
+
+  document
+    .querySelectorAll(".view")
+    .forEach(v=>v.classList.remove("active"));
+
+  document
+    .getElementById(nombre)
+    .classList.add("active");
+
+  document
+    .querySelectorAll(".menu-btn")
+    .forEach(b=>b.classList.remove("active"));
+
+  if(boton){
+    boton.classList.add("active");
+  }
+
+  if(nombre==="movimientos"){
+    setTimeout(enfocarScanner,100);
+  }
+
+}
+
+
+function seleccionarConsulta(boton){
+
+  mostrarVista("consulta",boton);
+
+  setTimeout(()=>{
+    document
+      .getElementById("searchInput")
+      .focus();
+  },100);
+
+}
+
+
+/* =====================================================
+   MODO
+===================================================== */
+
+function cambiarModo(modo){
+
+  modoActual = modo;
+
+  document
+    .querySelectorAll(".mode-btn")
+    .forEach(btn=>btn.classList.remove("selected"));
+
+  if(modo==="ENTRADA"){
+    document
+      .getElementById("btnEntrada")
+      .classList.add("selected");
+  }
+
+  if(modo==="SALIDA"){
+    document
+      .getElementById("btnSalida")
+      .classList.add("selected");
+  }
+
+  if(modo==="AJUSTE"){
+    document
+      .getElementById("btnAjuste")
+      .classList.add("selected");
+  }
+
+  mostrarMensaje(
+    "Modo seleccionado: "+modo,
+    "warning"
+  );
+
+  setTimeout(()=>{
+    ocultarMensaje();
+    enfocarScanner();
+  },800);
+
+}
+
+
+/* =====================================================
+   SCANNER
+===================================================== */
+
+function manejarScanner(e){
+
+  if(e.key !== "Enter"){
+    return;
+  }
+
+  e.preventDefault();
+
+  if(procesando){
+    return;
+  }
+
+  const input = document.getElementById("scannerInput");
+
+  const barcode =
+    input.value.trim();
+
+  if(!barcode){
+    return;
+  }
+
+  procesarCodigo(barcode);
+
+}
+
+
+async function procesarCodigo(barcode){
+
+  if(procesando){
+    return;
+  }
+
+  procesando = true;
+
+  document
+    .getElementById("scannerInput")
+    .value = "";
+
+  try{
+
+    mostrarMensaje(
+      "Consultando producto...",
+      "warning"
+    );
+
+    const resultado =
+      await apiLookup(barcode);
+
+    if(!resultado.ok){
+
+      mostrarMensaje(
+        resultado.error || "Producto no encontrado.",
+        "error"
+      );
+
+      limpiarProducto();
+
+      return;
+    }
+
+    mostrarProducto(resultado);
+
+    const cantidad =
+      parseFloat(
+        document.getElementById("quantityInput").value
+      );
+
+    if(!cantidad || cantidad <= 0){
+
+      mostrarMensaje(
+        "La cantidad debe ser mayor a 0.",
+        "error"
+      );
+
+      return;
+    }
+
+    const rapid =
+      document.getElementById("rapidMode").checked;
+
+    if(rapid){
+
+      await registrarMovimiento(
+        barcode,
+        cantidad
+      );
+
+    }else{
+
+      mostrarMensaje(
+        "Producto encontrado. Revisa y escanea nuevamente para registrar.",
+        "warning"
+      );
+
+    }
+
+  }catch(error){
+
+    console.error(error);
+
+    mostrarMensaje(
+      "Error de conexión con el sistema.",
+      "error"
+    );
+
+  }finally{
+
+    procesando = false;
+
+    setTimeout(enfocarScanner,100);
+
+  }
+
+}
+
+
+/* =====================================================
+   API LOOKUP
+===================================================== */
+
+function apiLookup(barcode){
+
+  return new Promise((resolve,reject)=>{
+
+    const callback =
+      "cb_" +
+      Date.now() +
+      "_" +
+      Math.floor(Math.random()*10000);
+
+    window[callback] = function(data){
+
+      try{
+        delete window[callback];
+      }catch(e){}
+
+      script.remove();
+
+      resolve(data);
+
+    };
+
+    const script =
+      document.createElement("script");
+
+    script.src =
+      API +
+      "?action=lookup" +
+      "&barcode=" +
+      encodeURIComponent(barcode) +
+      "&callback=" +
+      callback;
+
+    script.onerror=function(){
+
+      try{
+        delete window[callback];
+      }catch(e){}
+
+      script.remove();
+
+      reject(
+        new Error("No se pudo conectar con API")
+      );
+
+    };
+
+    document.body.appendChild(script);
+
+  });
+
+}
+
+
+/* =====================================================
+   REGISTRAR MOVIMIENTO
+===================================================== */
+
+function registrarMovimiento(barcode,cantidad){
+
+  return new Promise((resolve,reject)=>{
+
+    const usuario =
+      localStorage.getItem("bclean_usuario")
+      || "ALMACEN";
+
+    const callback =
+      "cbm_" +
+      Date.now() +
+      "_" +
+      Math.floor(Math.random()*10000);
+
+    window[callback]=function(data){
+
+      try{
+        delete window[callback];
+      }catch(e){}
+
+      script.remove();
+
+      if(data && data.ok){
+
+        mostrarMensaje(
+          "✓ "+modoActual+
+          " registrada correctamente",
+          "success"
+        );
+
+        mostrarUltimoMovimiento(
+          data,
+          cantidad
+        );
+
+        resolve(data);
+
+      }else{
+
+        mostrarMensaje(
+          data.error ||
+          "No se pudo registrar el movimiento.",
+          "error"
+        );
+
+        reject(
+          new Error(
+            data.error ||
+            "Error en movimiento"
+          )
+        );
+
+      }
+
+    };
+
+    const script =
+      document.createElement("script");
+
+    script.src =
+      API +
+      "?action=register" +
+      "&barcode=" +
+      encodeURIComponent(barcode) +
+      "&tipo=" +
+      encodeURIComponent(modoActual) +
+      "&cantidad=" +
+      encodeURIComponent(cantidad) +
+      "&usuario=" +
+      encodeURIComponent(usuario) +
+      "&callback=" +
+      callback;
+
+    script.onerror=function(){
+
+      try{
+        delete window[callback];
+      }catch(e){}
+
+      script.remove();
+
+      reject(
+        new Error("Error de conexión")
+      );
+
+    };
+
+    document.body.appendChild(script);
+
+  });
+
+}
+
+
+/* =====================================================
+   MOSTRAR PRODUCTO
+===================================================== */
+
+function mostrarProducto(data){
+
+  const card =
+    document.getElementById("productCard");
+
+  card.querySelector(".product-name")
+    .textContent =
+      data.producto ||
+      "Producto";
+
+  document
+    .getElementById("productClave")
+    .textContent =
+      data.clave || "—";
+
+  document
+    .getElementById("productBarcode")
+    .textContent =
+      data.barcode || "—";
+
+  const stock =
+    Number(data.existencia || 0);
+
+  const stockElement =
+    document.getElementById("productStock");
+
+  stockElement.textContent =
+    formatearNumero(stock);
+
+  stockElement.className =
+    "data-value " +
+    claseStock(stock);
+
+  document
+    .getElementById("productState")
+    .textContent =
+      data.estado || "—";
+
+}
+
+
+/* =====================================================
+   LIMPIAR PRODUCTO
+===================================================== */
+
+function limpiarProducto(){
+
+  document
+    .querySelector(".product-name")
+    .textContent =
+      "Esperando producto...";
+
+  document
+    .getElementById("productClave")
+    .textContent = "—";
+
+  document
+    .getElementById("productBarcode")
+    .textContent = "—";
+
+  document
+    .getElementById("productStock")
+    .textContent = "—";
+
+  document
+    .getElementById("productState")
+    .textContent = "—";
+
+}
+
+
+/* =====================================================
+   ULTIMO MOVIMIENTO
+===================================================== */
+
+function mostrarUltimoMovimiento(data,cantidad){
+
+  const usuario =
+    localStorage.getItem("bclean_usuario")
+    || "ALMACEN";
+
+  const ahora =
+    new Date();
+
+  document
+    .getElementById("lastMovement")
+    .innerHTML =
+      "<strong>"+modoActual+"</strong> · " +
+      cantidad+" unidad(es) · " +
+      "<strong>"+escapeHtml(data.producto || "")+
+      "</strong> · " +
+      "Clave "+escapeHtml(data.clave || "")+
+      " · "+
+      ahora.toLocaleTimeString("es-MX");
+
+}
+
+
+/* =====================================================
+   MENSAJES
+===================================================== */
+
+function mostrarMensaje(texto,tipo){
+
+  const elemento =
+    document.getElementById("movementMessage");
+
+  elemento.textContent = texto;
+
+  elemento.className =
+    "message " + tipo;
+
+}
+
+
+function ocultarMensaje(){
+
+  const elemento =
+    document.getElementById("movementMessage");
+
+  elemento.className = "message";
+
+  elemento.textContent = "";
+
+}
+
+
+/* =====================================================
+   ENFOCAR SCANNER
+===================================================== */
+
+function enfocarScanner(){
+
+  const vista =
+    document.getElementById("movimientos");
+
+  if(!vista.classList.contains("active")){
+    return;
+  }
+
+  const input =
+    document.getElementById("scannerInput");
+
+  input.focus();
+
+  input.select();
+
+}
+
+
+/* =====================================================
+   INVENTARIO
+===================================================== */
+
+async function cargarInventario(boton){
+
+  if(boton){
+    mostrarVista("inventario",boton);
+  }else{
+
+    document
+      .querySelectorAll(".view")
+      .forEach(v=>v.classList.remove("active"));
+
+    document
+      .getElementById("inventario")
+      .classList.add("active");
+
+  }
+
+  const body =
+    document.getElementById("inventoryBody");
+
+  body.innerHTML =
+    "<tr><td colspan='6'>Cargando inventario...</td></tr>";
+
+  try{
+
+    const productos =
+      await apiProductos();
+
+    productosInventario =
+      productos || [];
+
+    renderInventario(productosInventario);
+
+  }catch(error){
+
+    console.error(error);
+
+    body.innerHTML =
+      "<tr><td colspan='6'>No se pudo cargar el inventario.</td></tr>";
+
+  }
+
+}
+
+
+function apiProductos(){
+
+  return new Promise((resolve,reject)=>{
+
+    const callback =
+      "cbi_" +
+      Date.now() +
+      "_" +
+      Math.floor(Math.random()*10000);
+
+    window[callback]=function(data){
+
+      try{
+        delete window[callback];
+      }catch(e){}
+
+      script.remove();
+
+      if(Array.isArray(data)){
+        resolve(data);
+      }else if(data && Array.isArray(data.productos)){
+        resolve(data.productos);
+      }else{
+        resolve([]);
+      }
+
+    };
+
+    const script =
+      document.createElement("script");
+
+    script.src =
+      API +
+      "?action=productos" +
+      "&callback=" +
+      callback;
+
+    script.onerror=function(){
+
+      try{
+        delete window[callback];
+      }catch(e){}
+
+      script.remove();
+
+      reject(
+        new Error("Error API")
+      );
+
+    };
+
+    document.body.appendChild(script);
+
+  });
+
+}
+
+
+function renderInventario(lista){
+
+  const body =
+    document.getElementById("inventoryBody");
+
+  if(!lista.length){
+
+    body.innerHTML =
+      "<tr><td colspan='6'>No hay productos.</td></tr>";
+
+    return;
+  }
+
+  body.innerHTML =
+    lista.map(p=>{
+
+      const existencia =
+        Number(
+          p.existencia ??
+          p.stock ??
+          p.existenciaActual ??
+          0
+        );
+
+      const minimo =
+        Number(
+          p.minimo ??
+          0
+        );
+
+      return `
+        <tr>
+          <td><strong>${escapeHtml(p.clave || "")}</strong></td>
+
+          <td>${escapeHtml(p.producto || "")}</td>
+
+          <td>${escapeHtml(p.barcode || p.codigo || "")}</td>
+
+          <td class="${claseStock(existencia)}">
+            <strong>${formatearNumero(existencia)}</strong>
+          </td>
+
+          <td>${formatearNumero(minimo)}</td>
+
+          <td>${escapeHtml(p.estado || estadoPorExistencia(existencia,minimo))}</td>
+        </tr>
+      `;
+
+    }).join("");
+
+}
+
+
+function filtrarInventario(){
+
+  const texto =
+    document
+      .getElementById("inventorySearch")
+      .value
+      .toLowerCase()
+      .trim();
+
+  if(!texto){
+
+    renderInventario(
+      productosInventario
+    );
+
+    return;
+  }
+
+  const filtrados =
+    productosInventario.filter(p=>{
+
+      const cadena =
+        [
+          p.clave,
+          p.producto,
+          p.barcode,
+          p.codigo
+        ]
+        .join(" ")
+        .toLowerCase();
+
+      return cadena.includes(texto);
+
+    });
+
+  renderInventario(filtrados);
+
+}
+
+
+/* =====================================================
+   BUSCADOR
+===================================================== */
+
+async function buscarProductos(){
+
+  const texto =
+    document
+      .getElementById("searchInput")
+      .value
+      .toLowerCase()
+      .trim();
+
+  const resultados =
+    document.getElementById("searchResults");
+
+  if(texto.length < 2){
+
+    resultados.innerHTML = "";
+
+    return;
+  }
+
+  try{
+
+    if(!productosInventario.length){
+
+      productosInventario =
+        await apiProductos();
+
+    }
+
+    const encontrados =
+      productosInventario
+      .filter(p=>{
+
+        const cadena =
+          [
+            p.clave,
+            p.producto,
+            p.barcode,
+            p.codigo
+          ]
+          .join(" ")
+          .toLowerCase();
+
+        return cadena.includes(texto);
+
+      })
+      .slice(0,30);
+
+    if(!encontrados.length){
+
+      resultados.innerHTML =
+        "<p>No se encontraron productos.</p>";
+
+      return;
+    }
+
+    resultados.innerHTML =
+      encontrados.map(p=>{
+
+        const stock =
+          Number(p.existencia || p.stock || 0);
+
+        return `
+          <div class="result-item"
+               onclick='seleccionarProducto(${JSON.stringify(p).replace(/'/g,"&#39;")})'>
+
+            <div class="result-name">
+              ${escapeHtml(p.producto || "")}
+            </div>
+
+            <div class="result-meta">
+              Clave: <strong>${escapeHtml(p.clave || "")}</strong>
+              · Existencia:
+              <strong>${formatearNumero(stock)}</strong>
+              · ${escapeHtml(p.estado || "")}
+            </div>
+
+          </div>
+        `;
+
+      }).join("");
+
+  }catch(error){
+
+    resultados.innerHTML =
+      "<p>No se pudo consultar el inventario.</p>";
+
+  }
+
+}
+
+
+function seleccionarProducto(producto){
+
+  document
+    .getElementById("searchInput")
+    .value =
+      producto.producto || "";
+
+  document
+    .getElementById("searchResults")
+    .innerHTML = "";
+
+}
+
+
+/* =====================================================
+   CONFIGURACIÓN
+===================================================== */
+
+function cargarConfiguracion(){
+
+  const usuario =
+    localStorage.getItem("bclean_usuario")
+    || "ALMACEN";
+
+  document
+    .getElementById("userInput")
+    .value = usuario;
+
+}
+
+
+function guardarConfiguracion(){
+
+  const usuario =
+    document
+      .getElementById("userInput")
+      .value
+      .trim();
+
+  if(!usuario){
+
+    alert(
+      "Escribe el nombre del usuario."
+    );
+
+    return;
+  }
+
+  localStorage.setItem(
+    "bclean_usuario",
+    usuario
+  );
+
+  alert(
+    "Configuración guardada."
+  );
+
+}
+
+
+/* =====================================================
+   UTILIDADES
+===================================================== */
+
+function formatearNumero(numero){
+
+  return Number(numero || 0)
+    .toLocaleString(
+      "es-MX",
+      {
+        maximumFractionDigits:2
+      }
+    );
+
+}
+
+
+function claseStock(stock){
+
+  if(stock <= 0){
+    return "stock-empty";
+  }
+
+  return "stock-ok";
+
+}
+
+
+function estadoPorExistencia(existencia,minimo){
+
+  if(existencia <= 0){
+    return "AGOTADO";
+  }
+
+  if(minimo > 0 && existencia <= minimo){
+    return "BAJO";
+  }
+
+  return "OK";
+
+}
+
+
+function escapeHtml(texto){
+
+  return String(texto ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+
+}
+
+
+/* =====================================================
+   SERVICE WORKER
+===================================================== */
+
+if("serviceWorker" in navigator){
+
+  window.addEventListener(
+    "load",
+    function(){
+
+      navigator.serviceWorker
+        .register("./sw.js")
+        .then(function(){
+          console.log(
+            "BClean Almacén: Service Worker activo"
+          );
+        })
+        .catch(function(error){
+          console.warn(
+            "No se pudo registrar Service Worker",
+            error
+          );
+        });
+
+    }
+  );
+
+}
+
+</script>
+
+</body>
+</html>
