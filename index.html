@@ -1318,7 +1318,7 @@ function mostrarProducto(data){
   document
     .getElementById("productBarcode")
     .textContent =
-      data.barcode || "—";
+      data.codigoBarras || data.barcode || data.codigo || "—";
 
   const stock =
     Number(data.existencia || 0);
@@ -1592,7 +1592,7 @@ function renderInventario(lista){
 
           <td>${escapeHtml(p.producto || "")}</td>
 
-          <td>${escapeHtml(p.barcode || p.codigo || "")}</td>
+          <td>${escapeHtml(p.codigoBarras || p.barcode || p.codigo || "")}</td>
 
           <td class="${claseStock(existencia)}">
             <strong>${formatearNumero(existencia)}</strong>
@@ -1634,6 +1634,7 @@ function filtrarInventario(){
         [
           p.clave,
           p.producto,
+          p.codigoBarras,
           p.barcode,
           p.codigo
         ]
