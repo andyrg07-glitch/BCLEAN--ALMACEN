@@ -1747,7 +1747,7 @@ tr:hover{
 
         <thead>
           <tr>
-            <th>Hora</th>
+            <th>Mov.</th>
             <th>Clave</th>
             <th>Producto</th>
             <th>Cantidad</th>
@@ -1773,7 +1773,7 @@ tr:hover{
 
         <thead>
           <tr>
-            <th>Hora</th>
+            <th>Mov.</th>
             <th>Clave</th>
             <th>Producto</th>
             <th>Cantidad</th>
@@ -1799,7 +1799,7 @@ tr:hover{
 
         <thead>
           <tr>
-            <th>Hora</th>
+            <th>Mov.</th>
             <th>Clave</th>
             <th>Producto</th>
             <th>Cantidad</th>
@@ -2026,7 +2026,106 @@ function renderResumenDiario(data){
   ).textContent =
     "Fecha: " + (data.fecha || "");
 
+/* =====================================================
+   AGRUPAR MOVIMIENTOS POR PRODUCTO
+===================================================== */
 
+function agruparMovimientosResumen(movimientos){
+
+  const grupos = {};
+
+  (movimientos || []).forEach(m => {
+
+    const clave = String(m.clave || "").trim();
+    const producto = String(m.producto || "").trim();
+
+    // Usamos clave como identificador principal
+    const identificador =
+      clave || producto.toUpperCase();
+
+    if(!grupos[identificador]){
+
+      grupos[identificador] = {
+        clave: clave,
+        producto: producto,
+        cantidad: 0,
+        movimientos: 0,
+        usuarios: [],
+        referencias: [],
+        observaciones: []
+      };
+
+    }
+
+    grupos[identificador].cantidad +=
+      Number(m.cantidad || 0);
+
+    grupos[identificador].movimientos++;
+
+
+    /* USUARIOS */
+
+    const usuario =
+      String(m.usuario || "").trim();
+
+    if(
+      usuario &&
+      !grupos[identificador].usuarios.includes(usuario)
+    ){
+      grupos[identificador].usuarios.push(usuario);
+    }
+
+
+    /* REFERENCIAS */
+
+    const referencia =
+      String(m.referencia || "").trim();
+
+    if(
+      referencia &&
+      !grupos[identificador].referencias.includes(referencia)
+    ){
+      grupos[identificador].referencias.push(referencia);
+    }
+
+
+    /* OBSERVACIONES */
+
+    const observacion =
+      String(m.observaciones || "").trim();
+
+    if(
+      observacion &&
+      !grupos[identificador].observaciones.includes(observacion)
+    ){
+      grupos[identificador].observaciones.push(observacion);
+    }
+
+  });
+
+
+  return Object.values(grupos).map(g => ({
+
+    clave: g.clave,
+
+    producto: g.producto,
+
+    cantidad: g.cantidad,
+
+    movimientos: g.movimientos,
+
+    usuario:
+      g.usuarios.join(", "),
+
+    referencia:
+      g.referencias.join(", "),
+
+    observaciones:
+      g.observaciones.join(", ")
+
+  }));
+
+}
   /* =========================
      TABLA DE ENTRADAS
   ========================= */
@@ -2063,7 +2162,7 @@ function renderResumenDiario(data){
 
 
 /* =====================================================
-   TABLAS
+   TABLAS DEL RESUMEN — PRODUCTOS AGRUPADOS
 ===================================================== */
 
 function renderTablaResumen(
@@ -2076,7 +2175,7 @@ function renderTablaResumen(
     document.getElementById(id);
 
 
-  if(!movimientos.length){
+  if(!movimientos || !movimientos.length){
 
     body.innerHTML = `
       <tr>
@@ -2091,23 +2190,20 @@ function renderTablaResumen(
   }
 
 
+  /* AGRUPAR PRODUCTOS REPETIDOS */
+
+  const agrupados =
+    agruparMovimientosResumen(movimientos);
+
+
   body.innerHTML =
-    movimientos.map(m => {
-
-      const partes =
-        String(m.fechaHora || "").split(" ");
-
-      const hora =
-        partes.length > 1
-          ? partes[1]
-          : "";
-
+    agrupados.map(m => {
 
       return `
         <tr>
 
-          <td>
-            ${escapeHtml(hora)}
+          <td class="resumen-num-movimientos">
+            ${m.movimientos}
           </td>
 
           <td>
@@ -2144,8 +2240,6 @@ function renderTablaResumen(
     }).join("");
 
 }
-
-
 /* =====================================================
    IMPRIMIR
 ===================================================== */
