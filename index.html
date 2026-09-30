@@ -848,6 +848,15 @@ tr:hover{
   background:#fdeaea;
   color:#b42318;
 }
+   .inventory-image-container{
+  width:72px;
+  height:72px;
+  margin:auto;
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
 </style>
 </head>
 
@@ -1874,8 +1883,7 @@ function apiProductos(){
 
 function renderInventario(lista){
 
-  const body =
-    document.getElementById("inventoryBody");
+  const body = document.getElementById("inventoryBody");
 
   if(!lista || !lista.length){
 
@@ -1890,111 +1898,107 @@ function renderInventario(lista){
     return;
   }
 
-  body.innerHTML =
-    lista.map(p=>{
+  body.innerHTML = lista.map(p => {
 
-      const existencia =
-        Number(
-          p.existencia ??
-          p.stock ??
-          p.existenciaActual ??
-          0
-        );
+    const existencia = Number(
+      p.existencia ??
+      p.stock ??
+      p.existenciaActual ??
+      0
+    );
 
-      const minimo =
-        Number(
-          p.minimo ??
-          0
-        );
+    const minimo = Number(
+      p.minimo ?? 0
+    );
 
-      const clave =
-        p.clave || "";
+    const clave = p.clave || "";
+    const producto = p.producto || "";
 
-      const producto =
-        p.producto || "";
+    const codigo =
+      p.codigoBarras ||
+      p.barcode ||
+      p.codigo ||
+      "";
 
-      const codigo =
-        p.codigoBarras ||
-        p.barcode ||
-        p.codigo ||
-        "";
+    const estado =
+      p.estado ||
+      estadoPorExistencia(existencia, minimo);
 
-      const estado =
-        p.estado ||
-        estadoPorExistencia(existencia,minimo);
+    const foto = String(p.fotoUrl || "").trim();
 
-      const foto =
-        p.fotoUrl || "";
+    return `
+      <tr class="inventory-row">
 
-      return `
-        <tr class="inventory-row">
+        <td class="inventory-photo-cell">
 
-          <td class="inventory-photo-cell">
+          <div class="inventory-image-container">
 
             ${
               foto
               ? `
                 <img
-                  src="${escapeHtml(foto)}"
+                  src="${foto}"
                   alt="${escapeHtml(producto)}"
                   class="inventory-photo"
                   loading="lazy"
-                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                  referrerpolicy="no-referrer"
+                  onerror="
+                    this.style.display='none';
+                    this.parentElement.querySelector('.inventory-photo-placeholder').style.display='flex';
+                  "
                 >
-
-                <div class="inventory-photo-placeholder" style="display:none;">
-                  <img
-                    src="logo-bclean.png"
-                    alt="BClean"
-                  >
-                </div>
               `
-              : `
-                <div class="inventory-photo-placeholder">
-                  <img
-                    src="logo-bclean.png"
-                    alt="BClean"
-                  >
-                </div>
-              `
+              : ""
             }
 
-          </td>
+            <div
+              class="inventory-photo-placeholder"
+              ${foto ? `style="display:none;"` : ""}
+            >
+              <img
+                src="logo-bclean.png"
+                alt="BClean"
+              >
+            </div>
 
-          <td>
-            <strong class="inventory-key">
-              ${escapeHtml(clave)}
-            </strong>
-          </td>
+          </div>
 
-          <td class="inventory-product-name">
-            ${escapeHtml(producto)}
-          </td>
+        </td>
 
-          <td class="inventory-barcode">
-            ${escapeHtml(codigo)}
-          </td>
+        <td>
+          <strong class="inventory-key">
+            ${escapeHtml(clave)}
+          </strong>
+        </td>
 
-          <td class="${claseStock(existencia)} inventory-stock">
-            <strong>
-              ${formatearNumero(existencia)}
-            </strong>
-          </td>
+        <td class="inventory-product-name">
+          ${escapeHtml(producto)}
+        </td>
 
-          <td>
-            ${formatearNumero(minimo)}
-          </td>
+        <td class="inventory-barcode">
+          ${escapeHtml(codigo)}
+        </td>
 
-          <td>
-            <span class="inventory-state ${claseEstadoInventario(estado)}">
-              ${escapeHtml(estado)}
-            </span>
-          </td>
+        <td class="${claseStock(existencia)} inventory-stock">
+          <strong>
+            ${formatearNumero(existencia)}
+          </strong>
+        </td>
 
-        </tr>
-      `;
+        <td>
+          ${formatearNumero(minimo)}
+        </td>
 
-    }).join("");
+        <td>
+          <span class="inventory-state ${claseEstadoInventario(estado)}">
+            ${escapeHtml(estado)}
+          </span>
+        </td>
+
+      </tr>
+    `;
+
+  }).join("");
 
 }
    function claseEstadoInventario(estado){
