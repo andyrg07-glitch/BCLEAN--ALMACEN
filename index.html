@@ -63,18 +63,159 @@ body{
 }
 
 /* =========================
-   ENCABEZADO
+   ENCABEZADO CORPORATIVO BCLEAN
 ========================= */
 
 .header{
-  height:74px;
-  background:var(--azul);
-  color:white;
+  min-height:88px;
+  background:#ffffff;
+  color:#263238;
+
   display:flex;
   align-items:center;
   justify-content:space-between;
-  padding:0 28px;
-  box-shadow:0 2px 8px rgba(0,0,0,.15);
+
+  padding:12px 28px;
+
+  border-bottom:4px solid #3d558c;
+
+  box-shadow:
+    0 3px 12px rgba(0,0,0,.08);
+
+  box-sizing:border-box;
+}
+
+
+/* LADO IZQUIERDO */
+
+.header-brand{
+  display:flex;
+  align-items:center;
+  gap:18px;
+}
+
+
+/* LOGO */
+
+.header-logo{
+  width:125px;
+  height:64px;
+
+  object-fit:contain;
+
+  flex-shrink:0;
+}
+
+
+/* TEXTOS */
+
+.header-text{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+
+.header-title{
+  margin:0;
+
+  font-family:Helvetica, Arial, sans-serif;
+  font-size:23px;
+  font-weight:700;
+
+  letter-spacing:.4px;
+
+  color:#3d558c;
+}
+
+.header-subtitle{
+  margin-top:4px;
+
+  font-family:Arial, sans-serif;
+  font-size:13px;
+  font-weight:400;
+
+  color:#6b7280;
+}
+
+
+/* ESTADO DEL SISTEMA */
+
+.header-status{
+  display:flex;
+  align-items:center;
+  gap:8px;
+
+  padding:8px 13px;
+
+  border-radius:20px;
+
+  background:#edf1f8;
+
+  font-family:Arial, sans-serif;
+  font-size:12px;
+  font-weight:700;
+
+  color:#3d558c;
+}
+
+.header-status-dot{
+  width:9px;
+  height:9px;
+
+  background:#22a559;
+
+  border-radius:50%;
+
+  box-shadow:
+    0 0 0 3px rgba(34,165,89,.12);
+}
+
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width:700px){
+
+  .header{
+    min-height:76px;
+    padding:9px 14px;
+  }
+
+  .header-brand{
+    gap:10px;
+  }
+
+  .header-logo{
+    width:90px;
+    height:50px;
+  }
+
+  .header-title{
+    font-size:17px;
+  }
+
+  .header-subtitle{
+    font-size:11px;
+  }
+
+  .header-status{
+    padding:7px 9px;
+    font-size:10px;
+  }
+
+}
+
+@media (max-width:480px){
+
+  .header-subtitle{
+    display:none;
+  }
+
+  .header-status span:last-child{
+    display:none;
+  }
+
 }
 
 .logo{
