@@ -1,4 +1,4 @@
-const CACHE_NAME = "bclean-almacen-v1";
+const CACHE_NAME = "bclean-almacen-v2";
 
 const ARCHIVOS = [
   "./",
