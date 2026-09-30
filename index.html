@@ -711,7 +711,143 @@ tr:hover{
   }
 
 }
+/* =====================================================
+   INVENTARIO BCLEAN
+===================================================== */
 
+.inventory-row{
+  transition:
+    background .18s ease,
+    transform .18s ease;
+}
+
+.inventory-row:hover{
+  background:#f7f9fc;
+}
+
+
+/* FOTO */
+
+.inventory-photo-cell{
+  width:90px;
+  padding:8px !important;
+  text-align:center;
+}
+
+.inventory-photo{
+  width:72px;
+  height:72px;
+
+  object-fit:contain;
+
+  background:#ffffff;
+
+  border:1px solid #e4e8ee;
+  border-radius:10px;
+
+  padding:5px;
+
+  display:block;
+  margin:auto;
+}
+
+
+/* FOTO CUANDO NO EXISTE */
+
+.inventory-photo-placeholder{
+  width:72px;
+  height:72px;
+
+  margin:auto;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  background:#f4f6f8;
+
+  border:1px solid #e4e8ee;
+  border-radius:10px;
+}
+
+.inventory-photo-placeholder img{
+  width:55px;
+  max-height:45px;
+  object-fit:contain;
+
+  opacity:.35;
+}
+
+
+/* CLAVE */
+
+.inventory-key{
+  font-family:Helvetica, Arial, sans-serif;
+  color:#3d558c;
+  font-size:14px;
+}
+
+
+/* PRODUCTO */
+
+.inventory-product-name{
+  font-family:Arial, sans-serif;
+  font-weight:600;
+  color:#263238;
+
+  min-width:220px;
+}
+
+
+/* CODIGO DE BARRAS */
+
+.inventory-barcode{
+  font-family:monospace;
+  font-size:12px;
+  color:#6b7280;
+}
+
+
+/* EXISTENCIA */
+
+.inventory-stock{
+  font-family:Helvetica, Arial, sans-serif;
+  font-size:18px;
+}
+
+
+/* =========================
+   ESTADOS
+========================= */
+
+.inventory-state{
+  display:inline-flex;
+  align-items:center;
+
+  padding:5px 10px;
+
+  border-radius:20px;
+
+  font-size:11px;
+  font-weight:700;
+
+  white-space:nowrap;
+}
+
+.estado-disponible{
+  background:#e8f5ed;
+  color:#19713d;
+}
+
+.estado-bajo{
+  background:#fff4d6;
+  color:#9a6700;
+}
+
+.estado-agotado{
+  background:#fdeaea;
+  color:#b42318;
+}
 </style>
 </head>
 
@@ -973,6 +1109,7 @@ tr:hover{
       <thead>
 
         <tr>
+          <th>Foto</th>
           <th>Clave</th>
           <th>Producto</th>
           <th>Código</th>
@@ -1740,10 +1877,15 @@ function renderInventario(lista){
   const body =
     document.getElementById("inventoryBody");
 
-  if(!lista.length){
+  if(!lista || !lista.length){
 
-    body.innerHTML =
-      "<tr><td colspan='6'>No hay productos.</td></tr>";
+    body.innerHTML = `
+      <tr>
+        <td colspan="7" class="inventory-empty">
+          No hay productos para mostrar.
+        </td>
+      </tr>
+    `;
 
     return;
   }
@@ -1765,26 +1907,119 @@ function renderInventario(lista){
           0
         );
 
+      const clave =
+        p.clave || "";
+
+      const producto =
+        p.producto || "";
+
+      const codigo =
+        p.codigoBarras ||
+        p.barcode ||
+        p.codigo ||
+        "";
+
+      const estado =
+        p.estado ||
+        estadoPorExistencia(existencia,minimo);
+
+      const foto =
+        p.fotoUrl || "";
+
       return `
-        <tr>
-          <td><strong>${escapeHtml(p.clave || "")}</strong></td>
+        <tr class="inventory-row">
 
-          <td>${escapeHtml(p.producto || "")}</td>
+          <td class="inventory-photo-cell">
 
-          <td>${escapeHtml(p.codigoBarras || p.barcode || p.codigo || "")}</td>
+            ${
+              foto
+              ? `
+                <img
+                  src="${escapeHtml(foto)}"
+                  alt="${escapeHtml(producto)}"
+                  class="inventory-photo"
+                  loading="lazy"
+                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                >
 
-          <td class="${claseStock(existencia)}">
-            <strong>${formatearNumero(existencia)}</strong>
+                <div class="inventory-photo-placeholder" style="display:none;">
+                  <img
+                    src="logo-bclean.png"
+                    alt="BClean"
+                  >
+                </div>
+              `
+              : `
+                <div class="inventory-photo-placeholder">
+                  <img
+                    src="logo-bclean.png"
+                    alt="BClean"
+                  >
+                </div>
+              `
+            }
+
           </td>
 
-          <td>${formatearNumero(minimo)}</td>
+          <td>
+            <strong class="inventory-key">
+              ${escapeHtml(clave)}
+            </strong>
+          </td>
 
-          <td>${escapeHtml(p.estado || estadoPorExistencia(existencia,minimo))}</td>
+          <td class="inventory-product-name">
+            ${escapeHtml(producto)}
+          </td>
+
+          <td class="inventory-barcode">
+            ${escapeHtml(codigo)}
+          </td>
+
+          <td class="${claseStock(existencia)} inventory-stock">
+            <strong>
+              ${formatearNumero(existencia)}
+            </strong>
+          </td>
+
+          <td>
+            ${formatearNumero(minimo)}
+          </td>
+
+          <td>
+            <span class="inventory-state ${claseEstadoInventario(estado)}">
+              ${escapeHtml(estado)}
+            </span>
+          </td>
+
         </tr>
       `;
 
     }).join("");
 
+}
+   function claseEstadoInventario(estado){
+
+  const texto =
+    String(estado || "")
+      .trim()
+      .toUpperCase();
+
+  if(
+    texto.includes("AGOTADO") ||
+    texto.includes("SIN STOCK")
+  ){
+    return "estado-agotado";
+  }
+
+  if(
+    texto.includes("BAJO") ||
+    texto.includes("MINIMO") ||
+    texto.includes("MÍNIMO")
+  ){
+    return "estado-bajo";
+  }
+
+  return "estado-disponible";
 }
 
 
