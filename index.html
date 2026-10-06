@@ -2027,155 +2027,23 @@ function renderResumenDiario(data){
     "Fecha: " + (data.fecha || "");
 
 /* =====================================================
-   AGRUPAR MOVIMIENTOS POR PRODUCTO
+   TABLAS DEL RESUMEN — AGRUPADAS POR PRODUCTO
 ===================================================== */
 
-function agruparMovimientosResumen(movimientos){
+function renderTablaResumen(id, movimientos, esAjuste){
 
-  const grupos = {};
+  const body = document.getElementById(id);
 
-  (movimientos || []).forEach(m => {
+  if(!body){
+    console.error("No existe el tbody:", id);
+    return;
+  }
 
-    const clave = String(m.clave || "").trim();
-    const producto = String(m.producto || "").trim();
+  /* =========================================
+     VALIDAR MOVIMIENTOS
+  ========================================= */
 
-    // Usamos clave como identificador principal
-    const identificador =
-      clave || producto.toUpperCase();
-
-    if(!grupos[identificador]){
-
-      grupos[identificador] = {
-        clave: clave,
-        producto: producto,
-        cantidad: 0,
-        movimientos: 0,
-        usuarios: [],
-        referencias: [],
-        observaciones: []
-      };
-
-    }
-
-    grupos[identificador].cantidad +=
-      Number(m.cantidad || 0);
-
-    grupos[identificador].movimientos++;
-
-
-    /* USUARIOS */
-
-    const usuario =
-      String(m.usuario || "").trim();
-
-    if(
-      usuario &&
-      !grupos[identificador].usuarios.includes(usuario)
-    ){
-      grupos[identificador].usuarios.push(usuario);
-    }
-
-
-    /* REFERENCIAS */
-
-    const referencia =
-      String(m.referencia || "").trim();
-
-    if(
-      referencia &&
-      !grupos[identificador].referencias.includes(referencia)
-    ){
-      grupos[identificador].referencias.push(referencia);
-    }
-
-
-    /* OBSERVACIONES */
-
-    const observacion =
-      String(m.observaciones || "").trim();
-
-    if(
-      observacion &&
-      !grupos[identificador].observaciones.includes(observacion)
-    ){
-      grupos[identificador].observaciones.push(observacion);
-    }
-
-  });
-
-
-  return Object.values(grupos).map(g => ({
-
-    clave: g.clave,
-
-    producto: g.producto,
-
-    cantidad: g.cantidad,
-
-    movimientos: g.movimientos,
-
-    usuario:
-      g.usuarios.join(", "),
-
-    referencia:
-      g.referencias.join(", "),
-
-    observaciones:
-      g.observaciones.join(", ")
-
-  }));
-
-}
-  /* =========================
-     TABLA DE ENTRADAS
-  ========================= */
-
-  renderTablaResumen(
-    "resumenEntradasBody",
-    data.entradas || [],
-    false
-  );
-
-
-  /* =========================
-     TABLA DE SALIDAS
-  ========================= */
-
-  renderTablaResumen(
-    "resumenSalidasBody",
-    data.salidas || [],
-    false
-  );
-
-
-  /* =========================
-     TABLA DE AJUSTES
-  ========================= */
-
-  renderTablaResumen(
-    "resumenAjustesBody",
-    data.ajustes || [],
-    true
-  );
-
-}
-
-
-/* =====================================================
-   TABLAS DEL RESUMEN — PRODUCTOS AGRUPADOS
-===================================================== */
-
-function renderTablaResumen(
-  id,
-  movimientos,
-  esAjuste
-){
-
-  const body =
-    document.getElementById(id);
-
-
-  if(!movimientos || !movimientos.length){
+  if(!Array.isArray(movimientos) || movimientos.length === 0){
 
     body.innerHTML = `
       <tr>
@@ -2186,8 +2054,180 @@ function renderTablaResumen(
     `;
 
     return;
-
   }
+
+
+  /* =========================================
+     AGRUPAR POR CLAVE
+  ========================================= */
+
+  const grupos = {};
+
+
+  movimientos.forEach(m => {
+
+    const clave =
+      String(m.clave || "").trim();
+
+    /*
+     * Si por alguna razón no existe clave,
+     * utilizamos el código de barras.
+     */
+
+    const identificador =
+      clave ||
+      String(m.codigoBarras || "").trim() ||
+      String(m.producto || "").trim();
+
+
+    if(!grupos[identificador]){
+
+      grupos[identificador] = {
+
+        clave:
+          clave,
+
+        producto:
+          String(m.producto || ""),
+
+        cantidad:
+          0,
+
+        movimientos:
+          0,
+
+        usuarios:
+          [],
+
+        referencias:
+          [],
+
+        observaciones:
+          []
+
+      };
+
+    }
+
+
+    const grupo =
+      grupos[identificador];
+
+
+    /* SUMAR CANTIDADES */
+
+    grupo.cantidad +=
+      Number(m.cantidad || 0);
+
+
+    /* CONTAR MOVIMIENTOS */
+
+    grupo.movimientos += 1;
+
+
+    /* USUARIO */
+
+    const usuario =
+      String(m.usuario || "").trim();
+
+    if(
+      usuario &&
+      !grupo.usuarios.includes(usuario)
+    ){
+      grupo.usuarios.push(usuario);
+    }
+
+
+    /* REFERENCIA */
+
+    const referencia =
+      String(m.referencia || "").trim();
+
+    if(
+      referencia &&
+      !grupo.referencias.includes(referencia)
+    ){
+      grupo.referencias.push(referencia);
+    }
+
+
+    /* OBSERVACIONES */
+
+    const observacion =
+      String(m.observaciones || "").trim();
+
+    if(
+      observacion &&
+      !grupo.observaciones.includes(observacion)
+    ){
+      grupo.observaciones.push(observacion);
+    }
+
+  });
+
+
+  /* =========================================
+     CONVERTIR A LISTA
+  ========================================= */
+
+  const lista =
+    Object.values(grupos);
+
+
+  /* =========================================
+     GENERAR TABLA
+  ========================================= */
+
+  body.innerHTML =
+    lista.map(m => {
+
+      const detalle =
+        esAjuste
+          ? m.observaciones.join(", ")
+          : m.referencias.join(", ");
+
+
+      return `
+        <tr>
+
+          <td class="resumen-num-movimientos">
+            <strong>
+              ${m.movimientos}
+            </strong>
+          </td>
+
+          <td>
+            <strong>
+              ${escapeHtml(m.clave)}
+            </strong>
+          </td>
+
+          <td>
+            ${escapeHtml(m.producto)}
+          </td>
+
+          <td class="resumen-cantidad">
+            <strong>
+              ${formatearNumero(m.cantidad)}
+            </strong>
+          </td>
+
+          <td>
+            ${escapeHtml(
+              m.usuarios.join(", ")
+            )}
+          </td>
+
+          <td>
+            ${escapeHtml(detalle)}
+          </td>
+
+        </tr>
+      `;
+
+    }).join("");
+
+}
 
 
   /* AGRUPAR PRODUCTOS REPETIDOS */
