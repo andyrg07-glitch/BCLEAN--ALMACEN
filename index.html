@@ -2033,7 +2033,8 @@ function renderResumenDiario(data){
 function renderTablaResumen(id, movimientos, esAjuste){
 
   const body = document.getElementById(id);
-
+console.log("TABLA:", id);
+console.log("MOVIMIENTOS RECIBIDOS:", movimientos);
   if(!body){
     console.error("No existe el tbody:", id);
     return;
@@ -2172,7 +2173,7 @@ function renderTablaResumen(id, movimientos, esAjuste){
 
   const lista =
     Object.values(grupos);
-
+console.log("PRODUCTOS AGRUPADOS:", lista);
 
   /* =========================================
      GENERAR TABLA
