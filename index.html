@@ -1953,8 +1953,6 @@ function consultarResumenDiario(){
   document.body.appendChild(script);
 
 }
-
-
 /* =====================================================
    MOSTRAR RESULTADOS
 ===================================================== */
@@ -2018,7 +2016,7 @@ function renderResumenDiario(data){
 
 
   /* =========================
-     FECHA DEL REPORTE
+     FECHA
   ========================= */
 
   document.getElementById(
@@ -2026,19 +2024,34 @@ function renderResumenDiario(data){
   ).textContent =
     "Fecha: " + (data.fecha || "");
 
-/* =====================================================
-   TABLAS DEL RESUMEN — AGRUPADAS POR PRODUCTO
-===================================================== */
 
-function renderTablaResumen(id, movimientos, esAjuste){
+  /* =========================
+     TABLAS
+  ========================= */
 
-  const body = document.getElementById(id);
-console.log("TABLA:", id);
-console.log("MOVIMIENTOS RECIBIDOS:", movimientos);
-  if(!body){
-    console.error("No existe el tbody:", id);
-    return;
-  }
+  renderTablaResumen(
+    "resumenEntradasBody",
+    data.entradas || [],
+    false
+  );
+
+
+  renderTablaResumen(
+    "resumenSalidasBody",
+    data.salidas || [],
+    false
+  );
+
+
+  renderTablaResumen(
+    "resumenAjustesBody",
+    data.ajustes || [],
+    true
+  );
+
+}
+
+
 
   /* =========================================
      VALIDAR MOVIMIENTOS
@@ -2229,50 +2242,191 @@ console.log("PRODUCTOS AGRUPADOS:", lista);
     }).join("");
 
 }
+/* =====================================================
+   TABLAS DEL RESUMEN — AGRUPAR POR PRODUCTO
+===================================================== */
+
+function renderTablaResumen(id, movimientos, esAjuste){
+
+  const body = document.getElementById(id);
+
+  if(!body){
+    console.error("No existe el tbody:", id);
+    return;
+  }
+
+  /* =========================================
+     SIN MOVIMIENTOS
+  ========================================= */
+
+  if(!Array.isArray(movimientos) || movimientos.length === 0){
+
+    body.innerHTML = `
+      <tr>
+        <td colspan="6" class="resumen-vacio">
+          Sin movimientos
+        </td>
+      </tr>
+    `;
+
+    return;
+  }
 
 
-  /* AGRUPAR PRODUCTOS REPETIDOS */
+  /* =========================================
+     AGRUPAR PRODUCTOS POR CLAVE
+  ========================================= */
 
-  const agrupados =
-    agruparMovimientosResumen(movimientos);
+  const grupos = {};
+
+
+  movimientos.forEach(m => {
+
+    const clave =
+      String(m.clave || "").trim();
+
+    const producto =
+      String(m.producto || "").trim();
+
+    const codigo =
+      String(m.codigoBarras || "").trim();
+
+
+    const identificador =
+      clave ||
+      codigo ||
+      producto;
+
+
+    if(!grupos[identificador]){
+
+      grupos[identificador] = {
+
+        clave: clave,
+
+        producto: producto,
+
+        cantidad: 0,
+
+        movimientos: 0,
+
+        usuarios: [],
+
+        referencias: [],
+
+        observaciones: []
+
+      };
+
+    }
+
+
+    const grupo =
+      grupos[identificador];
+
+
+    /* SUMAR CANTIDADES */
+
+    grupo.cantidad +=
+      Number(m.cantidad || 0);
+
+
+    /* CONTAR REGISTROS */
+
+    grupo.movimientos += 1;
+
+
+    /* USUARIOS */
+
+    const usuario =
+      String(m.usuario || "").trim();
+
+    if(
+      usuario &&
+      !grupo.usuarios.includes(usuario)
+    ){
+      grupo.usuarios.push(usuario);
+    }
+
+
+    /* REFERENCIAS */
+
+    const referencia =
+      String(m.referencia || "").trim();
+
+    if(
+      referencia &&
+      !grupo.referencias.includes(referencia)
+    ){
+      grupo.referencias.push(referencia);
+    }
+
+
+    /* OBSERVACIONES */
+
+    const observacion =
+      String(m.observaciones || "").trim();
+
+    if(
+      observacion &&
+      !grupo.observaciones.includes(observacion)
+    ){
+      grupo.observaciones.push(observacion);
+    }
+
+  });
+
+
+  /* =========================================
+     CREAR FILAS
+  ========================================= */
+
+  const lista =
+    Object.values(grupos);
 
 
   body.innerHTML =
-    agrupados.map(m => {
+    lista.map(m => {
+
+      const detalle =
+        esAjuste
+          ? m.observaciones.join(", ")
+          : m.referencias.join(", ");
+
 
       return `
         <tr>
 
           <td class="resumen-num-movimientos">
-            ${m.movimientos}
-          </td>
-
-          <td>
             <strong>
-              ${escapeHtml(m.clave || "")}
+              ${m.movimientos}
             </strong>
           </td>
 
           <td>
-            ${escapeHtml(m.producto || "")}
+            <strong>
+              ${escapeHtml(m.clave)}
+            </strong>
+          </td>
+
+          <td>
+            ${escapeHtml(m.producto)}
           </td>
 
           <td class="resumen-cantidad">
-            ${formatearNumero(m.cantidad || 0)}
+            <strong>
+              ${formatearNumero(m.cantidad)}
+            </strong>
           </td>
 
           <td>
-            ${escapeHtml(m.usuario || "")}
+            ${escapeHtml(
+              m.usuarios.join(", ")
+            )}
           </td>
 
           <td>
-            ${
-              escapeHtml(
-                esAjuste
-                  ? m.observaciones || ""
-                  : m.referencia || ""
-              )
-            }
+            ${escapeHtml(detalle)}
           </td>
 
         </tr>
@@ -2281,6 +2435,8 @@ console.log("PRODUCTOS AGRUPADOS:", lista);
     }).join("");
 
 }
+
+ 
 /* =====================================================
    IMPRIMIR
 ===================================================== */
