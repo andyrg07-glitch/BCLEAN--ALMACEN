@@ -2180,68 +2180,7 @@ function renderResumenDiario(data){
   });
 
 
-  /* =========================================
-     CONVERTIR A LISTA
-  ========================================= */
-
-  const lista =
-    Object.values(grupos);
-console.log("PRODUCTOS AGRUPADOS:", lista);
-
-  /* =========================================
-     GENERAR TABLA
-  ========================================= */
-
-  body.innerHTML =
-    lista.map(m => {
-
-      const detalle =
-        esAjuste
-          ? m.observaciones.join(", ")
-          : m.referencias.join(", ");
-
-
-      return `
-        <tr>
-
-          <td class="resumen-num-movimientos">
-            <strong>
-              ${m.movimientos}
-            </strong>
-          </td>
-
-          <td>
-            <strong>
-              ${escapeHtml(m.clave)}
-            </strong>
-          </td>
-
-          <td>
-            ${escapeHtml(m.producto)}
-          </td>
-
-          <td class="resumen-cantidad">
-            <strong>
-              ${formatearNumero(m.cantidad)}
-            </strong>
-          </td>
-
-          <td>
-            ${escapeHtml(
-              m.usuarios.join(", ")
-            )}
-          </td>
-
-          <td>
-            ${escapeHtml(detalle)}
-          </td>
-
-        </tr>
-      `;
-
-    }).join("");
-
-}
+ 
 /* =====================================================
    TABLAS DEL RESUMEN — AGRUPAR POR PRODUCTO
 ===================================================== */
