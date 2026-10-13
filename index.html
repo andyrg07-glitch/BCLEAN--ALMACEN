@@ -1275,6 +1275,40 @@ tr:hover{
   font-size:20px;
   color:#3d558c;
 }
+
+/* BCLEAN 2026 - diseño y navegación */
+.header{background:#3d558c;color:white;border-bottom:4px solid #293b67;}
+.header-title{color:#fff;}.header-subtitle{color:#e3eafb;}
+.header-status{background:rgba(255,255,255,.14);color:white;}
+.header-logo{background:#fff;border-radius:10px;padding:5px;}
+.app{min-height:calc(100vh - 88px);}
+.sidebar{background:#fff;box-shadow:2px 0 15px rgba(32,51,91,.04);}
+.menu-btn{transition:background .18s,color .18s;}
+.menu-btn:focus-visible,.zone-button:focus-visible{outline:3px solid #77a8ff;outline-offset:2px;}
+.content{min-width:0;}
+.croquis-layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(300px,1fr);gap:18px;align-items:start;}
+.croquis-card{background:white;border:1px solid #e3e7ed;border-radius:14px;padding:18px;box-shadow:0 2px 8px #1424430d;min-width:0;}
+.croquis-map{display:grid;grid-template-columns:repeat(6,minmax(105px,1fr));gap:9px;overflow:auto;}
+.zone-block{border-radius:12px;padding:9px;background:var(--zone-bg,#edf1f8);border:1px solid #d5dce8;min-width:0;}
+.zone-block h3{font:700 14px Helvetica,Arial,sans-serif;margin:0 0 9px;text-align:center;color:#263238;}
+.zone-button{display:flex;align-items:center;gap:7px;width:100%;min-height:42px;margin:5px 0;padding:7px 8px;background:#fff;border:1px solid #d8e0eb;border-radius:10px;cursor:pointer;text-align:left;color:#29364c;font-size:11px;}
+.zone-button strong{background:var(--zone-accent,#3d558c);color:white;padding:5px 7px;border-radius:15px;white-space:nowrap;font-size:11px;}
+.zone-button.selected{outline:3px solid #3d558c;outline-offset:1px;}
+.zone-button span{overflow-wrap:anywhere;}
+.zone-title{font-size:20px;color:#3d558c;margin:0 0 7px;}
+.zone-hint{font-size:13px;color:#6b7280;line-height:1.5;}
+.zone-list{max-height:420px;overflow:auto;margin-top:15px;}
+.zone-product{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid #e5eaf0;font-size:13px;}
+.zone-product strong{color:#3d558c;}
+.zone-form{display:grid;gap:9px;margin-top:18px;border-top:1px solid #e5eaf0;padding-top:15px;}
+.zone-form input{width:100%;padding:12px;border:1px solid #d8dde5;border-radius:8px;}
+.zone-form label{font-size:12px;font-weight:bold;}
+.zone-status{font-size:12px;color:#596679;}
+@media(max-width:1100px){.croquis-layout{grid-template-columns:1fr;}}
+@media(max-width:900px){.content{padding:14px;}.sidebar{position:sticky;top:0;z-index:10;}.croquis-map{grid-template-columns:repeat(3,minmax(115px,1fr));}.resumen-diario-section{padding:0;}}
+@media(max-width:520px){.croquis-map{grid-template-columns:repeat(2,minmax(110px,1fr));}.header-status{display:none;}.header-logo{width:76px;height:48px;}.header-title{font-size:16px;}.mode-selector{gap:5px;}.mode-btn{font-size:14px;padding:10px 4px;}.product-card{grid-template-columns:1fr;}.resumen-controles{flex-wrap:wrap;}}
+@media print{.croquis-layout{display:none!important;}}
+
 </style>
 </head>
 
@@ -1313,34 +1347,16 @@ tr:hover{
      MENU
 ========================= -->
 
-<aside class="sidebar">
-
+<aside class="sidebar" aria-label="Navegación principal">
   <div class="menu-title">Operaciones</div>
-
-  <button class="menu-btn active" onclick="mostrarVista('movimientos',this)">
-    📦 Movimientos
-  </button>
-
-  <button class="menu-btn" onclick="seleccionarConsulta(this)">
-    🔎 Consultar
-  </button>
-
-  <button class="menu-btn" onclick="cargarInventario(this)">
-    📊 Inventario
-  </button>
-
+  <button type="button" class="menu-btn active" data-vista="movimientos" onclick="mostrarVista('movimientos',this)">📦 Movimientos</button>
+  <button type="button" class="menu-btn" data-vista="consulta" onclick="seleccionarConsulta(this)">🔎 Consultar</button>
+  <button type="button" class="menu-btn" data-vista="inventario" onclick="cargarInventario(this)">📊 Inventario</button>
+  <button type="button" class="menu-btn" data-vista="resumenDiarioSection" onclick="mostrarResumenDiario(this)">📋 Resumen diario</button>
+  <div class="menu-title">Almacén</div>
+  <button type="button" class="menu-btn" data-vista="croquis" onclick="mostrarCroquis(this)">🗺️ Croquis interactivo</button>
   <div class="menu-title">Sistema</div>
-
-  <button class="menu-btn" onclick="mostrarVista('config',this)">
-    ⚙️ Configuración
-     <button
-  class="nav-btn"
-  onclick="mostrarResumenDiario()"
->
-  📋 Resumen diario
-</button>
-  </button>
-
+  <button type="button" class="menu-btn" data-vista="config" onclick="mostrarVista('config',this)">⚙️ Configuración</button>
 </aside>
 
 <!-- =========================
@@ -1567,6 +1583,28 @@ tr:hover{
      CONFIGURACION
 ========================= -->
 
+
+<section id="croquis" class="view">
+  <h1 class="page-title">Croquis interactivo del almacén</h1>
+  <p class="page-subtitle">Selecciona una ubicación para consultar los productos asignados. Esquema digital basado en tu croquis.</p>
+  <div class="croquis-layout">
+    <div class="croquis-card"><div id="croquisMap" class="croquis-map"></div>
+      <p class="zone-hint">Las letras representan ubicaciones o niveles conforme a la distribución del plano. Este esquema es navegable; no sustituye el plano a escala.</p>
+    </div>
+    <div class="croquis-card">
+      <h2 id="zoneSelectedTitle" class="zone-title">Selecciona una ubicación</h2>
+      <p id="zoneSelectedDesc" class="zone-hint">Haz clic en una zona del croquis para consultar sus productos.</p>
+      <div id="zoneProducts" class="zone-list"></div>
+      <div class="zone-form">
+        <label for="zoneProductKey">Asignar producto por clave</label>
+        <input id="zoneProductKey" placeholder="Ejemplo: 2038" autocomplete="off">
+        <button type="button" class="btn btn-primary" onclick="asignarUbicacionLocal()">Guardar ubicación en este dispositivo</button>
+        <div id="zoneStatus" class="zone-status">Las asignaciones se guardan localmente en este navegador. Para compartirlas entre dispositivos será necesaria la conexión adicional con Google Sheets.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section id="config" class="view">
 
   <h1 class="page-title">Configuración</h1>
@@ -1621,14 +1659,11 @@ tr:hover{
 
 </section>
 
-</main>
-
-</div>
 <!-- =====================================================
      RESUMEN DIARIO
 ====================================================== -->
 
-<section id="resumenDiarioSection" class="resumen-diario-section" style="display:none;">
+<section id="resumenDiarioSection" class="view resumen-diario-section">
 
   <div class="resumen-header">
 
@@ -1699,8 +1734,7 @@ tr:hover{
 
   <div id="areaResumenImpresion">
 
-    <div class="print-header">
-<div class="print-resumen-totales">
+    <div class="print-resumen-totales">
 
   <div>
     <span>ENTRADAS</span>
@@ -1723,6 +1757,7 @@ tr:hover{
   </div>
 
 </div>
+    <div class="print-header">
       <img
         src="logo-bclean.png"
         class="print-logo"
@@ -1830,55 +1865,24 @@ tr:hover{
   </div>
 
 </section>
+
+</main>
+
+</div>
 <script>
 /* =====================================================
    RESUMEN DIARIO
 ===================================================== */
 
-function mostrarResumenDiario(){
-
-  // Ocultar las pantallas principales conocidas
-  document.querySelectorAll(
-    "main section, .screen, .page, .view"
-  ).forEach(seccion => {
-
-    if(seccion.id !== "resumenDiarioSection"){
-      seccion.style.display = "none";
-    }
-
-  });
-
-  const resumen =
-    document.getElementById("resumenDiarioSection");
-
-  resumen.style.display = "block";
-
-
-  // Si todavía no hay fecha seleccionada,
-  // colocar automáticamente la fecha actual.
-
-  const input =
-    document.getElementById("fechaResumen");
-
+function mostrarResumenDiario(boton){
+  mostrarVista('resumenDiarioSection', boton);
+  const input=document.getElementById('fechaResumen');
   if(!input.value){
-
-    const hoy = new Date();
-
-    const fechaLocal =
-      hoy.getFullYear() +
-      "-" +
-      String(hoy.getMonth() + 1).padStart(2,"0") +
-      "-" +
-      String(hoy.getDate()).padStart(2,"0");
-
-    input.value = fechaLocal;
-
+    const hoy=new Date();
+    input.value=[hoy.getFullYear(),String(hoy.getMonth()+1).padStart(2,'0'),String(hoy.getDate()).padStart(2,'0')].join('-');
   }
-
   consultarResumenDiario();
-
 }
-
 
 /* =====================================================
    CONSULTAR RESUMEN
@@ -2053,134 +2057,6 @@ function renderResumenDiario(data){
 
 
 
-  /* =========================================
-     VALIDAR MOVIMIENTOS
-  ========================================= */
-
-  if(!Array.isArray(movimientos) || movimientos.length === 0){
-
-    body.innerHTML = `
-      <tr>
-        <td colspan="6" class="resumen-vacio">
-          Sin movimientos
-        </td>
-      </tr>
-    `;
-
-    return;
-  }
-
-
-  /* =========================================
-     AGRUPAR POR CLAVE
-  ========================================= */
-
-  const grupos = {};
-
-
-  movimientos.forEach(m => {
-
-    const clave =
-      String(m.clave || "").trim();
-
-    /*
-     * Si por alguna razón no existe clave,
-     * utilizamos el código de barras.
-     */
-
-    const identificador =
-      clave ||
-      String(m.codigoBarras || "").trim() ||
-      String(m.producto || "").trim();
-
-
-    if(!grupos[identificador]){
-
-      grupos[identificador] = {
-
-        clave:
-          clave,
-
-        producto:
-          String(m.producto || ""),
-
-        cantidad:
-          0,
-
-        movimientos:
-          0,
-
-        usuarios:
-          [],
-
-        referencias:
-          [],
-
-        observaciones:
-          []
-
-      };
-
-    }
-
-
-    const grupo =
-      grupos[identificador];
-
-
-    /* SUMAR CANTIDADES */
-
-    grupo.cantidad +=
-      Number(m.cantidad || 0);
-
-
-    /* CONTAR MOVIMIENTOS */
-
-    grupo.movimientos += 1;
-
-
-    /* USUARIO */
-
-    const usuario =
-      String(m.usuario || "").trim();
-
-    if(
-      usuario &&
-      !grupo.usuarios.includes(usuario)
-    ){
-      grupo.usuarios.push(usuario);
-    }
-
-
-    /* REFERENCIA */
-
-    const referencia =
-      String(m.referencia || "").trim();
-
-    if(
-      referencia &&
-      !grupo.referencias.includes(referencia)
-    ){
-      grupo.referencias.push(referencia);
-    }
-
-
-    /* OBSERVACIONES */
-
-    const observacion =
-      String(m.observaciones || "").trim();
-
-    if(
-      observacion &&
-      !grupo.observaciones.includes(observacion)
-    ){
-      grupo.observaciones.push(observacion);
-    }
-
-  });
-
-
- 
 /* =====================================================
    TABLAS DEL RESUMEN — AGRUPAR POR PRODUCTO
 ===================================================== */
@@ -2447,29 +2323,18 @@ document.addEventListener("DOMContentLoaded",function(){
 ===================================================== */
 
 function mostrarVista(nombre,boton){
-
-  document
-    .querySelectorAll(".view")
-    .forEach(v=>v.classList.remove("active"));
-
-  document
-    .getElementById(nombre)
-    .classList.add("active");
-
-  document
-    .querySelectorAll(".menu-btn")
-    .forEach(b=>b.classList.remove("active"));
-
-  if(boton){
-    boton.classList.add("active");
-  }
-
-  if(nombre==="movimientos"){
-    setTimeout(enfocarScanner,100);
-  }
-
+  const destino=document.getElementById(nombre);
+  if(!destino){console.error('Vista no encontrada:',nombre);return;}
+  document.querySelectorAll('main .view').forEach(v=>{
+    v.classList.remove('active');
+    v.style.removeProperty('display');
+  });
+  destino.classList.add('active');
+  document.querySelectorAll('.menu-btn').forEach(b=>b.classList.remove('active'));
+  const elegido=boton || document.querySelector('.menu-btn[data-vista="'+nombre+'"]');
+  if(elegido) elegido.classList.add('active');
+  if(nombre==='movimientos')setTimeout(enfocarScanner,100);
 }
-
 
 function seleccionarConsulta(boton){
 
@@ -2966,22 +2831,14 @@ async function cargarInventario(boton){
   if(boton){
     mostrarVista("inventario",boton);
   }else{
-
-    document
-      .querySelectorAll(".view")
-      .forEach(v=>v.classList.remove("active"));
-
-    document
-      .getElementById("inventario")
-      .classList.add("active");
-
+    mostrarVista("inventario");
   }
 
   const body =
     document.getElementById("inventoryBody");
 
   body.innerHTML =
-    "<tr><td colspan='6'>Cargando inventario...</td></tr>";
+    "<tr><td colspan='7'>Cargando inventario...</td></tr>";
 
   try{
 
@@ -2998,7 +2855,7 @@ async function cargarInventario(boton){
     console.error(error);
 
     body.innerHTML =
-      "<tr><td colspan='6'>No se pudo cargar el inventario.</td></tr>";
+      "<tr><td colspan='7'>No se pudo cargar el inventario.</td></tr>";
 
   }
 
@@ -3459,6 +3316,47 @@ function escapeHtml(texto){
 
 }
 
+
+
+/* CROQUIS Y UBICACIONES LOCALES - no modifica existencias */
+const BCLEAN_ZONAS=[
+ {n:1,c:'#dff7ff',a:'#14527d',l:[['C','ARCHIVO / BOTES'],['B','DESECHABLES'],['A','BOLSAS KRAFT / QUÍMICOS']]},
+ {n:2,c:'#ffe5e5',a:'#821717',l:[['B','PAPEL HIGIÉNICO'],['A','SERVILLETAS / SERVITOALLAS']]},
+ {n:3,c:'#e6e2ff',a:'#8c75ff',l:[['C','PAPEL HIGIÉNICO'],['B','PAPEL HIGIÉNICO'],['A','PAPEL HIGIÉNICO']]},
+ {n:4,c:'#e6ffe5',a:'#127a31',l:[['C','SERVITOALLA'],['B','PAPEL HIGIÉNICO'],['A','PAPEL HIGIÉNICO']]},
+ {n:5,c:'#fff6df',a:'#74610c',l:[['C','TOALLA EN ROLLO'],['B','TOALLA EN ROLLO'],['A','TOALLA EN ROLLO']]},
+ {n:6,c:'#ffe3f6',a:'#ae00a6',l:[['C','JARCIERÍA'],['B','TOALLA INTERDOBLADA'],['A','TOALLA INTERDOBLADA']]},
+ {n:7,c:'#fff0e0',a:'#e65b0a',l:[['A','BOLSA PLAST / JARCIERÍA E INSUMOS'],['B','JARCIERÍA / DESPACHADORES'],['C','GUANTES'],['D','BOLSA PLAST']]},
+ {n:8,c:'#e1fff2',a:'#008779',l:[['A','QUÍMICOS'],['B','ABARROTES'],['C','POLVOS']]},
+ {n:9,c:'#e1eaff',a:'#271378',l:[['A','CONTENEDOR'],['B','EMPAQUES'],['C','CUEVAS / SOLO'],['D','ENCERADOS'],['E','PRIMO'],['F','ENCERADOS'],['G','REYMA'],['H','CRISTAL'],['I','JARCIERÍA']]},
+ {n:10,c:'#e8eef0',a:'#404040',l:[['A','BASURA'],['B','RUTAS 1, 2 Y 3']]}
+];
+let ubicacionSeleccionada='';
+function leerUbicacionesLocales(){try{return JSON.parse(localStorage.getItem('bclean_ubicaciones_v1')||'{}')}catch(e){return {}}}
+function mostrarCroquis(boton){mostrarVista('croquis',boton);renderCroquis();if(!productosInventario.length){apiProductos().then(data=>{productosInventario=Array.isArray(data)?data:[];renderUbicacionSeleccionada();}).catch(e=>console.warn('No se pudieron cargar productos:',e));}}
+function renderCroquis(){
+ const cont=document.getElementById('croquisMap');if(!cont)return;
+ cont.innerHTML=BCLEAN_ZONAS.map(z=>`<div class="zone-block" style="--zone-bg:${z.c};--zone-accent:${z.a}"><h3>ZONA ${z.n}</h3>${z.l.map(([l,d])=>{const id='Z'+z.n+'-'+l;return `<button type="button" class="zone-button ${id===ubicacionSeleccionada?'selected':''}" data-zone="${id}" onclick="seleccionarUbicacion('${id}')"><strong>${id}</strong><span>${escapeHtml(d)}</span></button>`}).join('')}</div>`).join('');
+}
+function seleccionarUbicacion(id){ubicacionSeleccionada=id;renderCroquis();renderUbicacionSeleccionada();}
+function renderUbicacionSeleccionada(){
+ const titulo=document.getElementById('zoneSelectedTitle'),desc=document.getElementById('zoneSelectedDesc'),lista=document.getElementById('zoneProducts');if(!titulo||!desc||!lista)return;
+ if(!ubicacionSeleccionada){titulo.textContent='Selecciona una ubicación';desc.textContent='Elige una ubicación en el croquis.';lista.innerHTML='';return;}
+ const zona=BCLEAN_ZONAS.find(z=>z.l.some(([l])=>'Z'+z.n+'-'+l===ubicacionSeleccionada));const nivel=zona?.l.find(([l])=>'Z'+zona.n+'-'+l===ubicacionSeleccionada);
+ titulo.textContent='Ubicación '+ubicacionSeleccionada;desc.textContent=nivel?nivel[1]:'';
+ const asignaciones=leerUbicacionesLocales();const encontrados=productosInventario.filter(p=>asignaciones[String(p.clave).trim()]===ubicacionSeleccionada);
+ lista.innerHTML=encontrados.length?encontrados.map(p=>`<div class="zone-product"><div><strong>${escapeHtml(p.clave)}</strong> · ${escapeHtml(p.producto)}<div class="zone-hint">Existencia actual: ${formatearNumero(p.existencia)}</div></div><button type="button" class="btn btn-secondary" onclick="quitarUbicacionLocal('${escapeHtml(String(p.clave))}')">Quitar</button></div>`).join(''):'<p class="zone-hint">Todavía no hay productos asignados a esta ubicación en este dispositivo.</p>';
+}
+function asignarUbicacionLocal(){
+ const campo=document.getElementById('zoneProductKey'),estado=document.getElementById('zoneStatus');const clave=campo.value.trim();
+ if(!ubicacionSeleccionada){estado.textContent='Selecciona primero una ubicación.';return;}
+ if(!clave){estado.textContent='Escribe una clave.';return;}
+ const producto=productosInventario.find(p=>String(p.clave).trim()===clave);
+ if(!producto){estado.textContent='Clave no encontrada en el inventario cargado. Actualiza Inventario y vuelve a intentarlo.';return;}
+ const asignaciones=leerUbicacionesLocales();asignaciones[clave]=ubicacionSeleccionada;
+ try{localStorage.setItem('bclean_ubicaciones_v1',JSON.stringify(asignaciones));estado.textContent='Ubicación guardada localmente para '+clave+'. No se ha enviado a Google Sheets.';campo.value='';renderUbicacionSeleccionada();}catch(e){estado.textContent='No se pudo guardar en este navegador.';}
+}
+function quitarUbicacionLocal(clave){const asignaciones=leerUbicacionesLocales();delete asignaciones[clave];localStorage.setItem('bclean_ubicaciones_v1',JSON.stringify(asignaciones));renderUbicacionSeleccionada();}
 
 /* =====================================================
    SERVICE WORKER
