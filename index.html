@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>BClean Almacén</title>
+<title>BClean Almacén · Ubicaciones compartidas</title>
 
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#3d558c">
@@ -1598,8 +1598,8 @@ tr:hover{
       <div class="zone-form">
         <label for="zoneProductKey">Asignar producto por clave</label>
         <input id="zoneProductKey" placeholder="Ejemplo: 2038" autocomplete="off">
-        <button type="button" class="btn btn-primary" onclick="asignarUbicacionLocal()">Guardar ubicación en este dispositivo</button>
-        <div id="zoneStatus" class="zone-status">Las asignaciones se guardan localmente en este navegador. Para compartirlas entre dispositivos será necesaria la conexión adicional con Google Sheets.</div>
+        <button type="button" class="btn btn-primary" onclick="guardarUbicacionCompartida()">Guardar ubicación en Google Sheets</button>
+        <div id="zoneStatus" class="zone-status">Las ubicaciones se consultan y guardan en Google Sheets. Selecciona una zona para comenzar.</div>
       </div>
     </div>
   </div>
@@ -3318,45 +3318,164 @@ function escapeHtml(texto){
 
 
 
-/* CROQUIS Y UBICACIONES LOCALES - no modifica existencias */
+/* CROQUIS Y UBICACIONES COMPARTIDAS - no modifica existencias */
 const BCLEAN_ZONAS=[
  {n:1,c:'#dff7ff',a:'#14527d',l:[['C','ARCHIVO / BOTES'],['B','DESECHABLES'],['A','BOLSAS KRAFT / QUÍMICOS']]},
- {n:2,c:'#ffe5e5',a:'#821717',l:[['B','PAPEL HIGIÉNICO'],['A','SERVILLETAS / SERVITOALLAS']]},
+ {n:2,c:'#ffe5e5',a:'#821717',l:[['C','GUANTES'],['B','PAPEL HIGIÉNICO'],['A','SERVILLETAS / SERVITOALLAS']]},
  {n:3,c:'#e6e2ff',a:'#8c75ff',l:[['C','PAPEL HIGIÉNICO'],['B','PAPEL HIGIÉNICO'],['A','PAPEL HIGIÉNICO']]},
  {n:4,c:'#e6ffe5',a:'#127a31',l:[['C','SERVITOALLA'],['B','PAPEL HIGIÉNICO'],['A','PAPEL HIGIÉNICO']]},
  {n:5,c:'#fff6df',a:'#74610c',l:[['C','TOALLA EN ROLLO'],['B','TOALLA EN ROLLO'],['A','TOALLA EN ROLLO']]},
  {n:6,c:'#ffe3f6',a:'#ae00a6',l:[['C','JARCIERÍA'],['B','TOALLA INTERDOBLADA'],['A','TOALLA INTERDOBLADA']]},
- {n:7,c:'#fff0e0',a:'#e65b0a',l:[['A','BOLSA PLAST / JARCIERÍA E INSUMOS'],['B','JARCIERÍA / DESPACHADORES'],['C','GUANTES'],['D','BOLSA PLAST']]},
- {n:8,c:'#e1fff2',a:'#008779',l:[['A','QUÍMICOS'],['B','ABARROTES'],['C','POLVOS']]},
+ {n:7,c:'#fff0e0',a:'#e65b0a',l:[['A','BOLSA PLAST / JARCIERÍA E INSUMOS'],['B','JARCIERÍA'],['C','GUANTES'],['D','BOLSA PLAST'],['E','DESPACHADORES']]},
+ {n:8,c:'#e1fff2',a:'#008779',l:[['A','QUÍMICOS'],['B','ABARROTES'],['C','PALOS']]},
  {n:9,c:'#e1eaff',a:'#271378',l:[['A','CONTENEDOR'],['B','EMPAQUES'],['C','CUEVAS / SOLO'],['D','ENCERADOS'],['E','PRIMO'],['F','ENCERADOS'],['G','REYMA'],['H','CRISTAL'],['I','JARCIERÍA']]},
  {n:10,c:'#e8eef0',a:'#404040',l:[['A','BASURA'],['B','RUTAS 1, 2 Y 3']]}
 ];
 let ubicacionSeleccionada='';
-function leerUbicacionesLocales(){try{return JSON.parse(localStorage.getItem('bclean_ubicaciones_v1')||'{}')}catch(e){return {}}}
-function mostrarCroquis(boton){mostrarVista('croquis',boton);renderCroquis();if(!productosInventario.length){apiProductos().then(data=>{productosInventario=Array.isArray(data)?data:[];renderUbicacionSeleccionada();}).catch(e=>console.warn('No se pudieron cargar productos:',e));}}
+let ubicacionesCompartidas=[];
+let ubicacionesCargadas=false;
+let ubicacionesOcupadas=false;
+let consultaUbicacionesEnCurso=null;
+
+// La API original de BClean responde con JSONP (callback({...})).
+// No se usa fetch porque Apps Script se publica en otro dominio.
+function apiUbicacionesBClean(action, parametros={}){
+  return new Promise((resolve,reject)=>{
+    const callback='bcleanUbic_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+    const script=document.createElement('script');
+    let finalizado=false;
+    const timer=setTimeout(()=>terminar(new Error('La API de ubicaciones no respondió. Revisa tu conexión y la implementación de Apps Script.')),20000);
+    function terminar(error,resultado){
+      if(finalizado)return;
+      finalizado=true;
+      clearTimeout(timer);
+      script.remove();
+      try{delete window[callback];}catch(e){window[callback]=undefined;}
+      if(error)reject(error);else resolve(resultado);
+    }
+    window[callback]=(data)=>{
+      if(!data || data.ok!==true){
+        terminar(new Error(String(data?.error||data?.message||'La API rechazó la operación.')));
+        return;
+      }
+      terminar(null,data);
+    };
+    script.onerror=()=>terminar(new Error('No se pudo conectar con la API de ubicaciones.'));
+    const url=new URL(API);
+    url.searchParams.set('action',action);
+    url.searchParams.set('callback',callback);
+    url.searchParams.set('_',String(Date.now()));
+    Object.entries(parametros).forEach(([k,v])=>url.searchParams.set(k,String(v)));
+    script.src=url.toString();
+    document.body.appendChild(script);
+  });
+}
+function estadoUbicaciones(mensaje,error=false){
+  const el=document.getElementById('zoneStatus');
+  if(el){el.textContent=mensaje;el.style.color=error?'#b42318':'#596679';}
+}
+async function cargarUbicacionesCompartidas(){
+  if(consultaUbicacionesEnCurso)return consultaUbicacionesEnCurso;
+  consultaUbicacionesEnCurso=(async()=>{
+    estadoUbicaciones('Consultando ubicaciones en Google Sheets...');
+    try{
+      const datos=await apiUbicacionesBClean('ubicaciones');
+      ubicacionesCompartidas=Array.isArray(datos.ubicaciones)?datos.ubicaciones.map(r=>({
+        clave:String(r.clave??'').trim(),
+        ubicacion:String(r.ubicacion??'').trim().toUpperCase(),
+        cantidad:r.cantidad??''
+      })):[];
+      ubicacionesCargadas=true;
+      estadoUbicaciones('Ubicaciones sincronizadas con Google Sheets. '+ubicacionesCompartidas.length+' asignación(es).');
+      renderUbicacionSeleccionada();
+      return true;
+    }catch(e){
+      ubicacionesCargadas=false;
+      estadoUbicaciones('No se pudieron consultar las ubicaciones: '+e.message,true);
+      renderUbicacionSeleccionada();
+      return false;
+    }finally{consultaUbicacionesEnCurso=null;}
+  })();
+  return consultaUbicacionesEnCurso;
+}
+function mostrarCroquis(boton){
+  mostrarVista('croquis',boton);
+  renderCroquis();
+  cargarUbicacionesCompartidas();
+  if(!productosInventario.length){
+    apiProductos().then(data=>{
+      productosInventario=Array.isArray(data)?data:[];
+      renderUbicacionSeleccionada();
+    }).catch(e=>estadoUbicaciones('No se pudo cargar el catálogo: '+e.message,true));
+  }
+}
 function renderCroquis(){
- const cont=document.getElementById('croquisMap');if(!cont)return;
- cont.innerHTML=BCLEAN_ZONAS.map(z=>`<div class="zone-block" style="--zone-bg:${z.c};--zone-accent:${z.a}"><h3>ZONA ${z.n}</h3>${z.l.map(([l,d])=>{const id='Z'+z.n+'-'+l;return `<button type="button" class="zone-button ${id===ubicacionSeleccionada?'selected':''}" data-zone="${id}" onclick="seleccionarUbicacion('${id}')"><strong>${id}</strong><span>${escapeHtml(d)}</span></button>`}).join('')}</div>`).join('');
+  const cont=document.getElementById('croquisMap');if(!cont)return;
+  cont.innerHTML=BCLEAN_ZONAS.map(z=>`<div class="zone-block" style="--zone-bg:${z.c};--zone-accent:${z.a}"><h3>ZONA ${z.n}</h3>${z.l.map(([l,d])=>{const id='Z'+z.n+'-'+l;return `<button type="button" class="zone-button ${id===ubicacionSeleccionada?'selected':''}" data-zone="${id}" onclick="seleccionarUbicacion('${id}')"><strong>${id}</strong><span>${escapeHtml(d)}</span></button>`}).join('')}</div>`).join('');
 }
 function seleccionarUbicacion(id){ubicacionSeleccionada=id;renderCroquis();renderUbicacionSeleccionada();}
 function renderUbicacionSeleccionada(){
- const titulo=document.getElementById('zoneSelectedTitle'),desc=document.getElementById('zoneSelectedDesc'),lista=document.getElementById('zoneProducts');if(!titulo||!desc||!lista)return;
- if(!ubicacionSeleccionada){titulo.textContent='Selecciona una ubicación';desc.textContent='Elige una ubicación en el croquis.';lista.innerHTML='';return;}
- const zona=BCLEAN_ZONAS.find(z=>z.l.some(([l])=>'Z'+z.n+'-'+l===ubicacionSeleccionada));const nivel=zona?.l.find(([l])=>'Z'+zona.n+'-'+l===ubicacionSeleccionada);
- titulo.textContent='Ubicación '+ubicacionSeleccionada;desc.textContent=nivel?nivel[1]:'';
- const asignaciones=leerUbicacionesLocales();const encontrados=productosInventario.filter(p=>asignaciones[String(p.clave).trim()]===ubicacionSeleccionada);
- lista.innerHTML=encontrados.length?encontrados.map(p=>`<div class="zone-product"><div><strong>${escapeHtml(p.clave)}</strong> · ${escapeHtml(p.producto)}<div class="zone-hint">Existencia actual: ${formatearNumero(p.existencia)}</div></div><button type="button" class="btn btn-secondary" onclick="quitarUbicacionLocal('${escapeHtml(String(p.clave))}')">Quitar</button></div>`).join(''):'<p class="zone-hint">Todavía no hay productos asignados a esta ubicación en este dispositivo.</p>';
+  const titulo=document.getElementById('zoneSelectedTitle'),desc=document.getElementById('zoneSelectedDesc'),lista=document.getElementById('zoneProducts');
+  if(!titulo||!desc||!lista)return;
+  if(!ubicacionSeleccionada){titulo.textContent='Selecciona una ubicación';desc.textContent='Elige una ubicación en el croquis.';lista.innerHTML='';return;}
+  const zona=BCLEAN_ZONAS.find(z=>z.l.some(([l])=>'Z'+z.n+'-'+l===ubicacionSeleccionada));
+  const nivel=zona?.l.find(([l])=>'Z'+zona.n+'-'+l===ubicacionSeleccionada);
+  titulo.textContent='Ubicación '+ubicacionSeleccionada;
+  desc.textContent=nivel?nivel[1]:'';
+  if(!ubicacionesCargadas){lista.innerHTML='<p class="zone-hint">Consultando ubicaciones compartidas...</p>';return;}
+  const encontrados=ubicacionesCompartidas.filter(r=>r.ubicacion===ubicacionSeleccionada);
+  lista.innerHTML=encontrados.length?encontrados.map(r=>{
+    const p=productosInventario.find(x=>String(x.clave??'').trim()===r.clave);
+    const detalle=p?`<div class="zone-hint">Existencia total: ${formatearNumero(p.existencia)}</div>`:'';
+    const cantidad=r.cantidad!==''?`<div class="zone-hint">Cantidad en ubicación: ${escapeHtml(r.cantidad)}</div>`:'';
+    return `<div class="zone-product"><div><strong>${escapeHtml(r.clave)}</strong> · ${escapeHtml(p?.producto||'Producto del inventario')}${detalle}${cantidad}</div><button type="button" class="btn btn-secondary" data-quitar-clave="${escapeHtml(r.clave)}" ${ubicacionesOcupadas?'disabled':''}>Quitar</button></div>`;
+  }).join(''):'<p class="zone-hint">No hay productos asignados a esta ubicación en Google Sheets.</p>';
+  lista.querySelectorAll('[data-quitar-clave]').forEach(b=>b.addEventListener('click',()=>quitarUbicacionCompartida(b.dataset.quitarClave)));
 }
-function asignarUbicacionLocal(){
- const campo=document.getElementById('zoneProductKey'),estado=document.getElementById('zoneStatus');const clave=campo.value.trim();
- if(!ubicacionSeleccionada){estado.textContent='Selecciona primero una ubicación.';return;}
- if(!clave){estado.textContent='Escribe una clave.';return;}
- const producto=productosInventario.find(p=>String(p.clave).trim()===clave);
- if(!producto){estado.textContent='Clave no encontrada en el inventario cargado. Actualiza Inventario y vuelve a intentarlo.';return;}
- const asignaciones=leerUbicacionesLocales();asignaciones[clave]=ubicacionSeleccionada;
- try{localStorage.setItem('bclean_ubicaciones_v1',JSON.stringify(asignaciones));estado.textContent='Ubicación guardada localmente para '+clave+'. No se ha enviado a Google Sheets.';campo.value='';renderUbicacionSeleccionada();}catch(e){estado.textContent='No se pudo guardar en este navegador.';}
+async function guardarUbicacionCompartida(){
+  const campo=document.getElementById('zoneProductKey');
+  const clave=campo.value.trim();
+  if(ubicacionesOcupadas)return;
+  if(!ubicacionSeleccionada){estadoUbicaciones('Selecciona primero una ubicación.',true);return;}
+  if(!clave){estadoUbicaciones('Escribe una clave.',true);return;}
+  const producto=productosInventario.find(p=>String(p.clave??'').trim()===clave);
+  if(productosInventario.length && !producto){estadoUbicaciones('Clave no encontrada en el catálogo cargado. Verifica la clave.',true);return;}
+  if(!ubicacionesCargadas){
+    const listo=await cargarUbicacionesCompartidas();
+    if(!listo)return;
+  }
+  if(ubicacionesCompartidas.some(r=>r.clave===clave&&r.ubicacion===ubicacionSeleccionada)){
+    estadoUbicaciones('Este producto ya está asignado a '+ubicacionSeleccionada+'.');return;
+  }
+  const boton=document.querySelector('#croquis .zone-form .btn-primary');
+  ubicacionesOcupadas=true;if(boton)boton.disabled=true;
+  estadoUbicaciones('Guardando '+clave+' en '+ubicacionSeleccionada+'...');
+  try{
+    const destino=ubicacionSeleccionada;
+    await apiUbicacionesBClean('guardarUbicacion',{
+      clave,ubicacion:destino,usuario:localStorage.getItem('bclean_usuario')||'ALMACEN'
+    });
+    campo.value='';
+    // Solo se confirma tras respuesta ok:true del servidor.
+    await cargarUbicacionesCompartidas();
+    estadoUbicaciones('Producto '+clave+' guardado en '+destino+' en Google Sheets.');
+  }catch(e){estadoUbicaciones('No se guardó la ubicación: '+e.message,true);}
+  finally{ubicacionesOcupadas=false;if(boton)boton.disabled=false;renderUbicacionSeleccionada();}
 }
-function quitarUbicacionLocal(clave){const asignaciones=leerUbicacionesLocales();delete asignaciones[clave];localStorage.setItem('bclean_ubicaciones_v1',JSON.stringify(asignaciones));renderUbicacionSeleccionada();}
+async function quitarUbicacionCompartida(clave){
+  if(ubicacionesOcupadas||!ubicacionSeleccionada)return;
+  const destino=ubicacionSeleccionada;
+  if(!confirm('¿Quitar el producto '+clave+' de '+destino+'? No se modificará su existencia.'))return;
+  ubicacionesOcupadas=true;
+  renderUbicacionSeleccionada();
+  estadoUbicaciones('Quitando asignación...');
+  try{
+    await apiUbicacionesBClean('quitarUbicacion',{clave,ubicacion:destino});
+    await cargarUbicacionesCompartidas();
+    estadoUbicaciones('Se quitó la asignación de '+clave+' en '+destino+'.');
+  }catch(e){estadoUbicaciones('No se pudo quitar la asignación: '+e.message,true);}
+  finally{ubicacionesOcupadas=false;renderUbicacionSeleccionada();}
+}
 
 /* =====================================================
    SERVICE WORKER
